@@ -53,4 +53,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+    // I test JVM chiamano codice che usa android.util.Log: restituisce valori di default.
+    testOptions { unitTests.isReturnDefaultValues = true }
+}
+
+dependencies {
+    testImplementation("junit:junit:4.13.2")
 }

@@ -5,9 +5,9 @@ name: APK
 on:
   push:
     branches: [master]
-    paths: ["app/**", "scripts/prepara-python.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
+    paths: ["app/**", "scripts/prepara-python.sh", "scripts/prepara-ha.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
   pull_request:
-    paths: ["app/**", "scripts/prepara-python.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
+    paths: ["app/**", "scripts/prepara-python.sh", "scripts/prepara-ha.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
   workflow_dispatch:
 
 concurrency:
@@ -24,6 +24,7 @@ jobs:
     timeout-minutes: 25
     env:
       PYTHON_VERSION: "3.14.10"
+      HA_VERSION: "2026.11.1"
       VERSION_CODE: ${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
@@ -45,6 +46,20 @@ jobs:
 
       - name: Python per Android
         run: bash scripts/prepara-python.sh
+
+      # Le wheel native si compilano in wheels.yml; qui si scaricano soltanto.
+      # La cache si rinnova ogni settimana per prendere le wheel nuove dell'indice.
+      - id: settimana
+        run: echo "n=$(date +%G-%V)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: app/build/ha
+          key: ha-${{ env.HA_VERSION }}-${{ hashFiles('scripts/prepara-ha.sh') }}-${{ steps.settimana.outputs.n }}
+
+      - name: Home Assistant Core
+        continue-on-error: true
+        timeout-minutes: 12
+        run: bash scripts/prepara-ha.sh
 
       - name: Keystore
         if: github.event_name != 'pull_request'

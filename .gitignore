@@ -6,6 +6,7 @@ app/build/
 app/.cxx/
 app/src/main/jniLibs/
 app/src/main/assets/python.zip
+app/src/main/assets/site.zip
 local.properties
 *.jks
 *.keystore

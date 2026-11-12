@@ -31,5 +31,5 @@ Un telefono senza root diventa un server Home Assistant completo: si installa un
 ## Stato
 
 - Fatto (M0a): APK con Python 3.14 incorporato, servizio sempre attivo, avvio al boot, watchdog, device owner, pagina di stato su `:8123`, release automatica.
-- Prossimo (M0b): installare HA Core e le sue dipendenze con wheel Android; inventario delle wheel mancanti.
+- In corso (M0b, [0002](0002-home-assistant-core.md)): HA Core nell'APK, pip in-process, wheel native da `wheels.yml`.
 - Da verificare sul 12T: che `ifaddr`/zeroconf vedano le interfacce di rete (Android 11+ limita netlink) e che `dlopen` da `site-packages` funzioni con `targetSdk 35`.

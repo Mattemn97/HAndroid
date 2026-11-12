@@ -36,11 +36,14 @@ object PythonRuntime {
             lib.path,
             File(lib, "lib-dynload").path,
             sitePackages.path,
+            // HA e dipendenze inclusi nell'APK: dopo site-packages, così un pacchetto
+            // aggiornato a runtime vince su quello di serie.
+            File(home, "site").path,
         )
         return runModule(home.path, paths, "handroid_main")
     }
 
-    /** Estrae assets/python.zip solo quando l'APK cambia. */
+    /** Estrae assets/python.zip (e site.zip, se c'è) solo quando l'APK cambia. */
     private fun prepara(ctx: Context, home: File) {
         val info = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
         val firma = "${info.longVersionCode}-${info.lastUpdateTime}"
@@ -49,11 +52,17 @@ object PythonRuntime {
 
         home.deleteRecursively()
         home.mkdirs()
-        val radice = home.canonicalPath + File.separator
-        ZipInputStream(ctx.assets.open("python.zip").buffered()).use { zip ->
+        estrai(ctx, "python.zip", home)
+        if ("site.zip" in ctx.assets.list("").orEmpty()) estrai(ctx, "site.zip", File(home, "site"))
+        stamp.writeText(firma)
+    }
+
+    private fun estrai(ctx: Context, asset: String, dest: File) {
+        val radice = dest.canonicalPath + File.separator
+        ZipInputStream(ctx.assets.open(asset).buffered()).use { zip ->
             while (true) {
                 val e = zip.nextEntry ?: break
-                val out = File(home, e.name)
+                val out = File(dest, e.name)
                 require(out.canonicalPath.startsWith(radice)) { "Percorso non valido: ${e.name}" }
                 if (e.isDirectory) out.mkdirs()
                 else {
@@ -62,6 +71,5 @@ object PythonRuntime {
                 }
             }
         }
-        stamp.writeText(firma)
     }
 }

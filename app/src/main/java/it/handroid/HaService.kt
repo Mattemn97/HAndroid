@@ -46,9 +46,13 @@ class HaService : Service() {
         }, "python").start()
 
         Thread({ watchdog { prefs.edit().putInt(AVVII_FALLITI, 0).apply() } }, "watchdog").start()
+        UsbPonte.avvia(this)
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.getBooleanExtra(RICONTROLLA_USB, false) == true) UsbPonte.ricontrolla(this)
+        return START_STICKY
+    }
 
     override fun onDestroy() {
         locks.forEach { it() }
@@ -117,6 +121,10 @@ class HaService : Service() {
         // Il primo avvio di HA installa pacchetti e può richiedere minuti.
         private const val GRAZIA_MS = 5 * 60_000L
 
-        fun avvia(ctx: Context) = ctx.startForegroundService(Intent(ctx, HaService::class.java))
+        private const val RICONTROLLA_USB = "ricontrolla_usb"
+
+        fun avvia(ctx: Context, ricontrollaUsb: Boolean = false) = ctx.startForegroundService(
+            Intent(ctx, HaService::class.java).putExtra(RICONTROLLA_USB, ricontrollaUsb)
+        )
     }
 }

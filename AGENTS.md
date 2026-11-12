@@ -27,6 +27,7 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
 - Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
 - `jniLibs/` e `assets/python.zip` sono generati: non si committano.
+- Chiavette USB: driver in `UsbSeriale.kt`, ponte TCP in `UsbPonte.kt` (6638 Zigbee, 6639 Z-Wave); una chiavetta nuova va anche in `res/xml/usb_device_filter.xml` (spec 0003).
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche

@@ -98,6 +98,7 @@ Limiti: zeroconf, Bluetooth e USB sono disattivati di default per evitare errori
 
 Un'app tutta nostra che fa girare il **vero** Home Assistant dentro l'APK, con Python 3.14 ufficiale per Android, senza emulazione. In più:
 - Bluetooth, chiavette Zigbee e sensori del telefono, tramite bridge locali.
+- Zigbee: collega la chiavetta, accetta il permesso e in ZHA scegli l'inserimento manuale con porta `socket://127.0.0.1:6638` (Z-Wave: `:6639`); lo stato è in `config/handroid_usb_stato.json`.
 - Add-on scaricabili solo quando servono.
 
 Il progetto completo (architettura, bridge, add-on, roadmap, rischi) è in [`docs/progetto-handroid.md`](docs/progetto-handroid.md). Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).

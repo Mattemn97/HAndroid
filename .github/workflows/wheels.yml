@@ -1,0 +1,86 @@
+# Compila le wheel Android (cp314, arm64) delle dipendenze native di HA che su PyPI
+# non ce l'hanno, e le pubblica come asset della release "wheels" con un index.html
+# che pip legge con --find-links (D8). Lungo: solo a mano o una volta a settimana.
+name: Wheel Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      pacchetti:
+        description: "Requisiti separati da spazio (vuoto = lista completa)"
+        required: false
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: write
+
+env:
+  # Requisiti di HA senza wheel Android su PyPI (vedi docs/specs/0002-home-assistant-core.md).
+  PACCHETTI: >-
+    audioop-lts==0.2.2 bcrypt==5.0.0 cffi ciso8601==2.3.3 cryptography==50.0.2
+    fnv-hash-fast==2.0.3 greenlet habluetooth lru-dict==1.4.1 orjson==3.13.0 Pillow==13.0.0
+    psutil pycares PyYAML==6.0.3 ulid-transform==2.2.9 zeroconf==0.152.0
+
+jobs:
+  lista:
+    runs-on: ubuntu-latest
+    outputs:
+      matrice: ${{ steps.m.outputs.matrice }}
+    steps:
+      - id: m
+        env:
+          SCELTI: ${{ inputs.pacchetti }}
+        run: echo "matrice=$(echo ${SCELTI:-$PACCHETTI} | jq -cR 'split(" ")')" >> "$GITHUB_OUTPUT"
+
+  wheel:
+    needs: lista
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        pacchetto: ${{ fromJSON(needs.lista.outputs.matrice) }}
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Sorgenti
+        run: |
+          pip download --no-deps --no-binary :all: -d sdist "${{ matrix.pacchetto }}"
+          mkdir src && tar xzf sdist/*.tar.gz -C src --strip-components 1
+      # Rust per cryptography, orjson, bcrypt (setuptools-rust e maturin leggono CARGO_BUILD_TARGET).
+      - run: rustup target add aarch64-linux-android
+      - name: cibuildwheel
+        env:
+          CIBW_PLATFORM: android
+          CIBW_ARCHS: arm64_v8a
+          CIBW_BUILD: cp314-*
+          CIBW_TEST_SKIP: "*"
+          CIBW_ENVIRONMENT_ANDROID: CARGO_BUILD_TARGET=aarch64-linux-android
+        run: pipx run cibuildwheel==4.3.5 src --output-dir wheelhouse
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ strategy.job-index }}
+          path: wheelhouse/*.whl
+
+  pubblica:
+    needs: wheel
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: wheelhouse
+          merge-multiple: true
+      - name: Release "wheels" e indice
+        run: |
+          gh release view wheels >/dev/null 2>&1 || gh release create wheels --title "Wheel Android" --notes "Indice pip per HAndroid (wheels.yml). Non è una release dell'app." --prerelease
+          ls wheelhouse/*.whl >/dev/null 2>&1 && gh release upload wheels wheelhouse/*.whl --clobber
+          URL="https://github.com/$GH_REPO/releases/download/wheels"
+          gh release view wheels --json assets -q '.assets[].name' | grep '\.whl$' \
+            | sed "s|.*|<a href=\"$URL/&\">&</a><br>|" > index.html
+          gh release upload wheels index.html --clobber

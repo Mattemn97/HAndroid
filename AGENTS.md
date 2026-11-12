@@ -13,6 +13,8 @@ App Android che fa girare Home Assistant Core vero dentro l'APK, senza root. Dec
 ```bash
 # Prepara Python (scarica CPython per Android, popola jniLibs e assets) — serve prima di ogni build
 bash scripts/prepara-python.sh
+# Prepara HA Core e le dipendenze con wheel Android (assets/site.zip); le wheel native si compilano con .github/workflows/wheels.yml
+bash scripts/prepara-ha.sh
 # Build (JDK 17, Android SDK + NDK, Gradle 8.10)
 gradle :app:assembleRelease
 # Installa sul telefono collegato via ADB (ultima release, o un APK locale)
@@ -26,9 +28,9 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - Mai lanciare eseguibili dalla cartella dati: Android li blocca. Un binario nuovo va in `jniLibs` come `lib<nome>.so`.
 - Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
 - Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
-- `jniLibs/` e `assets/python.zip` sono generati: non si committano.
 - Chiavette USB: driver in `UsbSeriale.kt`, ponte TCP in `UsbPonte.kt` (6638 Zigbee, 6639 Z-Wave); una chiavetta nuova va anche in `res/xml/usb_device_filter.xml` (spec 0003).
 - Il dispositivo ESPHome (`it.handroid.esphome`, spec 0004): codec e server non usano API Android oltre a `Log`, così si testano sulla JVM (`gradle :app:testReleaseUnitTest`).
+- `jniLibs/`, `assets/python.zip` e `assets/site.zip` sono generati: non si committano.
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche

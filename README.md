@@ -18,6 +18,8 @@ Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/relea
 
 HAndroid si presenta a Home Assistant come un dispositivo **ESPHome** chiamato *HAndroid* (porta 6053, senza chiave di crittografia): compare da solo tra i dispositivi scoperti, oppure si aggiunge da *Impostazioni → Dispositivi → Aggiungi integrazione → ESPHome* con host `127.0.0.1`. Porta con sé batteria e stato di carica, temperatura della batteria, luce ambiente, prossimità, segnale WiFi, uptime, l'interruttore della torcia e il pulsante "Riavvia Home Assistant". Dettagli in [docs/specs/0004-dispositivo-esphome.md](docs/specs/0004-dispositivo-esphome.md).
 
+Lo stesso dispositivo fa anche da **proxy Bluetooth**: i termometri Xiaomi BLE (e gli altri sensori Bluetooth) compaiono in HA senza un ESP32 ([spec 0005](docs/specs/0005-proxy-bluetooth.md)).
+
 ---
 
 ## Contenuto della cartella

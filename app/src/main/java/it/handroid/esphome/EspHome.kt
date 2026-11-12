@@ -44,6 +44,8 @@ object EspHome {
         val thread = HandlerThread("esphome-sensori").apply { start() }
         Sensori(ctx, registro, Handler(thread.looper)).collega()
         val s = ApiServer(info, registro, soloLocale = !prefs.getBoolean("lan", false))
+        // Proxy Bluetooth (spec 0005): va aggiunto prima che HA si colleghi, per DeviceInfo.
+        ProxyBle.crea(ctx, info.mac)?.let { s.moduli += it }
         s.avvia()
         server = s
         annuncia(ctx, info, s.portaEffettiva)

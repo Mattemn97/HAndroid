@@ -14,6 +14,9 @@
     <!-- Per i bridge della M2 (proxy Bluetooth ESPHome, sensori) -->
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" android:usesPermissionFlags="neverForLocation" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Android 10-11: scansione e GATT passano da BLUETOOTH/BLUETOOTH_ADMIN + posizione -->
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 

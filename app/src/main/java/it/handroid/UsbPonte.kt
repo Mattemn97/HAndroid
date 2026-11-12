@@ -181,7 +181,8 @@ object UsbPonte {
         private fun daUsb() {
             val buf = ByteArray(4096)
             while (attivo) {
-                val n = runCatching { seriale.leggi(buf) }.getOrElse { break }
+                val n = runCatching { seriale.leggi(buf) }.getOrDefault(-1)
+                if (n < 0) break
                 if (n == 0) continue
                 val c = client ?: continue
                 runCatching { c.getOutputStream().write(buf, 0, n) }.onFailure { runCatching { c.close() } }

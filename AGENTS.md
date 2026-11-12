@@ -27,6 +27,7 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
 - Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
 - `jniLibs/` e `assets/python.zip` sono generati: non si committano.
+- Il dispositivo ESPHome (`it.handroid.esphome`, spec 0004): codec e server non usano API Android oltre a `Log`, così si testano sulla JVM (`gradle :app:testReleaseUnitTest`).
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche

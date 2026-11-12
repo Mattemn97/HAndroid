@@ -14,6 +14,10 @@ Telefono resettato, senza account, debug USB attivo, collegato al PC:
 
 Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/releases), installa l'APK, rende l'app device owner (così HyperOS non la chiude) e toglie le restrizioni di batteria. Poi apri `http://IP-DEL-TELEFONO:8123`. Le scelte di progetto sono in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md).
 
+### Il telefono in Home Assistant
+
+HAndroid si presenta a Home Assistant come un dispositivo **ESPHome** chiamato *HAndroid* (porta 6053, senza chiave di crittografia): compare da solo tra i dispositivi scoperti, oppure si aggiunge da *Impostazioni → Dispositivi → Aggiungi integrazione → ESPHome* con host `127.0.0.1`. Porta con sé batteria e stato di carica, temperatura della batteria, luce ambiente, prossimità, segnale WiFi, uptime, l'interruttore della torcia e il pulsante "Riavvia Home Assistant". Dettagli in [docs/specs/0004-dispositivo-esphome.md](docs/specs/0004-dispositivo-esphome.md).
+
 ---
 
 ## Contenuto della cartella

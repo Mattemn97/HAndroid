@@ -29,6 +29,7 @@ class HaService : Service() {
     override fun onCreate() {
         super.onCreate()
         avviaInPrimoPiano()
+        it.handroid.esphome.EspHome.avvia(this)
         prendiLock()
 
         val prefs = createDeviceProtectedStorageContext().getSharedPreferences("supervisore", Context.MODE_PRIVATE)

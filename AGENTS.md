@@ -1,28 +1,33 @@
-# Nome del progetto
+# HAndroid
 
-<!-- Compila le parti tra parentesi e cancella questi commenti. Un modello completo è in esempi/ del kit. -->
+App Android che fa girare Home Assistant Core vero dentro l'APK, senza root. Decisioni fissate in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md), visione completa in [docs/progetto-handroid.md](docs/progetto-handroid.md).
 
 ## Stack
 
-- **Linguaggio**: (es. JavaScript, Node.js)
-- **Framework**: (es. Vue 3)
-- **Dipendenze chiave**: (es. Firebase, Tailwind)
+- **Linguaggio**: Kotlin (app), C (launcher JNI), Python 3.14 (avvio di HA)
+- **Framework**: Android SDK puro, senza AndroidX; minSdk 29, targetSdk 35, solo arm64-v8a
+- **Dipendenze chiave**: CPython ufficiale per Android (python.org), Home Assistant Core
 
 ## Comandi
 
 ```bash
-# Installazione
-# Avvio in locale
-# Test
-# Build
-# Deploy
+# Prepara Python (scarica CPython per Android, popola jniLibs e assets) — serve prima di ogni build
+bash scripts/prepara-python.sh
+# Build (JDK 17, Android SDK + NDK, Gradle 8.10)
+gradle :app:assembleRelease
+# Installa sul telefono collegato via ADB (ultima release, o un APK locale)
+bash scripts/installa-handroid.sh [file.apk] [--device-owner]
+# Release: automatica a ogni push su master che tocca l'app (.github/workflows/release.yml)
 ```
 
 ## Regole del progetto
 
-<!-- Solo quello che non si capisce leggendo il codice. Ogni regola dice cosa fare e cosa si rompe altrimenti.
-Di solito valgono: cosa va aggiornato insieme, dove sta una certa logica, cosa non va toccato, cosa viene controllato da un test.
-Esempio: "Un campo nuovo del profilo va aggiunto anche alle regole del database, altrimenti il salvataggio viene rifiutato." -->
+- La versione di Python sta in due posti: `PYTHON_VERSION` in `.github/workflows/release.yml` e il default in `scripts/prepara-python.sh`. Vanno cambiati insieme, e anche `python3.14` in `CMakeLists.txt` e `PythonRuntime.kt` se cambia la minore.
+- Mai lanciare eseguibili dalla cartella dati: Android li blocca. Un binario nuovo va in `jniLibs` come `lib<nome>.so`.
+- Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
+- Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
+- `jniLibs/` e `assets/python.zip` sono generati: non si committano.
+- Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche
 

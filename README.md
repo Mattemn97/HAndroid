@@ -2,7 +2,17 @@
 
 Questa cartella raccoglie tutto quello che serve per trasformare un vecchio **Xiaomi 12T** nel server Home Assistant di casa. Il server diventa il "master"; il telefono personale fa da "slave" e lo comanda con l'app Companion. Niente mini PC, niente Raspberry.
 
-Stato al 12 novembre 2026: è stata scelta la strada e gli script sono pronti, ma il telefono non è ancora stato preparato.
+Stato al 12 novembre 2026: è stata scelta la strada e gli script sono pronti, ma il telefono non è ancora stato preparato. L'app **HAndroid** (strada C) ha il primo APK (M0a: Python 3.14 dentro l'APK, servizio sempre attivo, pagina di stato su `:8123`); Home Assistant vero arriva con la M0b.
+
+## HAndroid in un comando
+
+Telefono resettato, senza account, debug USB attivo, collegato al PC:
+
+```bash
+./scripts/installa-handroid.sh --device-owner
+```
+
+Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/releases), installa l'APK, rende l'app device owner (così HyperOS non la chiude) e toglie le restrizioni di batteria. Poi apri `http://IP-DEL-TELEFONO:8123`. Le scelte di progetto sono in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md).
 
 ---
 

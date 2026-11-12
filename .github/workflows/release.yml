@@ -1,0 +1,75 @@
+# Ogni push su master che tocca l'app produce una release con l'APK firmato.
+# Le PR compilano soltanto. Documenti e README non fanno partire niente.
+name: APK
+
+on:
+  push:
+    branches: [master]
+    paths: ["app/**", "scripts/prepara-python.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
+  pull_request:
+    paths: ["app/**", "scripts/prepara-python.sh", "*.gradle.kts", "gradle.properties", ".github/workflows/release.yml"]
+  workflow_dispatch:
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHON_VERSION: "3.14.10"
+      VERSION_CODE: ${{ github.run_number }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.10.2"
+          cache-read-only: ${{ github.ref != 'refs/heads/master' }}
+
+      - uses: actions/cache@v4
+        with:
+          path: app/build/python-dl
+          key: python-android-${{ env.PYTHON_VERSION }}
+
+      - name: Python per Android
+        run: bash scripts/prepara-python.sh
+
+      - name: Keystore
+        if: github.event_name != 'pull_request'
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "KEYSTORE_FILE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Nessun keystore: APK firmato con chiave di debug, non aggiornabile sopra le release precedenti."
+          fi
+
+      - name: Build
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --no-daemon --console=plain -q
+
+      - name: Release
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V="0.1.${VERSION_CODE}"
+          cp app/build/outputs/apk/release/app-release.apk "HAndroid-$V-arm64.apk"
+          gh release create "v$V" "HAndroid-$V-arm64.apk" --title "HAndroid $V" --generate-notes --target "$GITHUB_SHA"

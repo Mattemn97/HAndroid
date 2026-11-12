@@ -17,6 +17,8 @@ bash scripts/prepara-python.sh
 bash scripts/prepara-ha.sh
 # Build (JDK 17, Android SDK + NDK, Gradle 8.10)
 gradle :app:assembleRelease
+# Test JVM della logica pura (Regole.kt)
+gradle :app:testReleaseUnitTest
 # Installa sul telefono collegato via ADB (ultima release, o un APK locale)
 bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 # Release: automatica a ogni push su master che tocca l'app (.github/workflows/release.yml)
@@ -31,6 +33,7 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - Chiavette USB: driver in `UsbSeriale.kt`, ponte TCP in `UsbPonte.kt` (6638 Zigbee, 6639 Z-Wave); una chiavetta nuova va anche in `res/xml/usb_device_filter.xml` (spec 0003).
 - Il dispositivo ESPHome (`it.handroid.esphome`, spec 0004): codec e server non usano API Android oltre a `Log`, così si testano sulla JVM (`gradle :app:testReleaseUnitTest`).
 - `jniLibs/`, `assets/python.zip` e `assets/site.zip` sono generati: non si committano.
+- Lo stato condiviso tra il processo dell'app e `:ha` sta in file nella cartella base (vedi spec 0006), mai nelle SharedPreferences.
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche

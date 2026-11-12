@@ -52,6 +52,18 @@
                 android:resource="@xml/usb_device_filter" />
         </activity>
 
+        <activity
+            android:name=".StatoActivity"
+            android:label="Stato HAndroid"
+            android:exported="false" />
+
+        <!-- Backup, aggiornamento e riavvio (spec 0006): nel processo del server, tenuto vivo dal servizio. -->
+        <receiver
+            android:name=".SupervisoreReceiver"
+            android:process=":ha"
+            android:directBootAware="true"
+            android:exported="false" />
+
         <!-- Processo separato: se Python si blocca il watchdog chiude solo questo. -->
         <service
             android:name=".HaService"

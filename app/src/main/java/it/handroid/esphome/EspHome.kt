@@ -72,7 +72,7 @@ object EspHome {
         }
         ctx.getSystemService(NsdManager::class.java).registerService(si, NsdManager.PROTOCOL_DNS_SD,
             object : NsdManager.RegistrationListener {
-                override fun onServiceRegistered(s: NsdServiceInfo) = Log.i(TAG, "mDNS: ${s.serviceName} annunciato")
+                override fun onServiceRegistered(s: NsdServiceInfo) { Log.i(TAG, "mDNS: ${s.serviceName} annunciato") }
                 override fun onRegistrationFailed(s: NsdServiceInfo, e: Int) { Log.w(TAG, "mDNS non registrato: $e") }
                 override fun onServiceUnregistered(s: NsdServiceInfo) {}
                 override fun onUnregistrationFailed(s: NsdServiceInfo, e: Int) {}

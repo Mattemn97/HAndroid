@@ -80,6 +80,9 @@ jobs:
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: gradle :app:assembleRelease --no-daemon --console=plain -q
 
+      - name: Test JVM
+        run: gradle :app:testReleaseUnitTest --no-daemon --console=plain -q
+
       - name: Release
         if: github.event_name != 'pull_request'
         env:

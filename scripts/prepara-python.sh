@@ -30,7 +30,8 @@ mkdir -p "$STAGE/lib" "$STAGE/app"
 cp -r "$DEST/prefix/lib/python3.14" "$STAGE/lib/"
 rm -rf "$STAGE"/lib/python3.14/{test,idlelib,tkinter,turtledemo,config-3.14-*}
 find "$STAGE" -name __pycache__ -prune -exec rm -rf {} +
-cp app/src/main/python/*.py "$STAGE/app/"
+# Codice app, compresa custom_components/handroid (integrazione add-on, 0007)
+cp -r app/src/main/python/. "$STAGE/app/"
 
 rm -f "$ASSETS/python.zip"
 (cd "$STAGE" && zip -qr -X "$OLDPWD/$ASSETS/python.zip" .)

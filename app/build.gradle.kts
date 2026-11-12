@@ -54,3 +54,9 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
 }
+
+dependencies {
+    // Solo per i test JVM: org.json vero al posto degli stub di android.jar.
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
+}

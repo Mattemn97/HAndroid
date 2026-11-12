@@ -45,6 +45,7 @@ class HaService : Service() {
             Process.killProcess(Process.myPid())
         }, "python").start()
 
+        it.handroid.addon.AddonManager.avvia(this) // add-on: API locale e avvio automatico (0007)
         Thread({ watchdog { prefs.edit().putInt(AVVII_FALLITI, 0).apply() } }, "watchdog").start()
     }
 

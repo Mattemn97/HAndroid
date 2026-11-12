@@ -1,0 +1,23 @@
+{
+  "config": {
+    "step": {"user": {"title": "HAndroid add-ons", "description": "Manage the add-ons running on this phone."}},
+    "abort": {"already_configured": "Already configured"}
+  },
+  "options": {
+    "step": {
+      "init": {"title": "Add-on", "data": {"slug": "Add-on"}},
+      "addon": {"title": "{nome}", "description": "{errore}", "data": {"boot_auto": "Start automatically"}}
+    },
+    "error": {"non_valide": "Invalid options"},
+    "abort": {"nessun_addon": "No installed add-on has options"}
+  },
+  "services": {
+    "install": {"name": "Install add-on", "description": "Download and install an add-on.", "fields": {"slug": {"name": "Add-on", "description": "Add-on slug."}}},
+    "start": {"name": "Start add-on", "description": "Start an installed add-on.", "fields": {"slug": {"name": "Add-on", "description": "Add-on slug."}}},
+    "stop": {"name": "Stop add-on", "description": "Stop a running add-on.", "fields": {"slug": {"name": "Add-on", "description": "Add-on slug."}}},
+    "uninstall": {"name": "Remove add-on", "description": "Stop and remove an add-on.", "fields": {"slug": {"name": "Add-on", "description": "Add-on slug."}}},
+    "set_options": {"name": "Add-on options", "description": "Set the add-on options (validated against its schema).", "fields": {"slug": {"name": "Add-on", "description": "Add-on slug."}, "options": {"name": "Options", "description": "Options object."}, "boot_auto": {"name": "Start automatically", "description": "Start with the phone."}}},
+    "repository": {"name": "Add-on repository", "description": "Add or remove an add-on repository.", "fields": {"url": {"name": "URL", "description": "Folder with index.json."}, "remove": {"name": "Remove", "description": "Remove instead of adding."}}},
+    "refresh": {"name": "Reload repositories", "description": "Read the add-on catalog again."}
+  }
+}

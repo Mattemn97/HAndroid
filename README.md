@@ -14,6 +14,8 @@ Telefono resettato, senza account, debug USB attivo, collegato al PC:
 
 Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/releases), installa l'APK, rende l'app device owner (così HyperOS non la chiude) e toglie le restrizioni di batteria. Poi apri `http://IP-DEL-TELEFONO:8123`. Le scelte di progetto sono in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md).
 
+**Add-on.** In HA aggiungi l'integrazione *HAndroid* (Impostazioni → Dispositivi e servizi): ogni add-on dei repository compare come dispositivo, si installa e si rimuove con i servizi `handroid.install` / `handroid.uninstall`, si avvia con il suo interruttore e si configura dalle opzioni dell'integrazione. Il repository ufficiale è la cartella [`addons/`](addons/) (per ora un broker MQTT in puro Python); altri si aggiungono con `handroid.repository`. Dettagli in [docs/specs/0007-addon.md](docs/specs/0007-addon.md).
+
 ---
 
 ## Contenuto della cartella

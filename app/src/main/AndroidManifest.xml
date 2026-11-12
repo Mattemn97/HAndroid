@@ -46,6 +46,39 @@
                 android:value="Server Home Assistant locale sempre attivo" />
         </service>
 
+        <!-- Pool di processi per gli add-on (docs/specs/0007-addon.md): uno per add-on attivo,
+             perché CPython si carica una sola volta per processo. Quanti sono: AddonStato.SLOT. -->
+        <service
+            android:name=".addon.AddonService1"
+            android:process=":addon1"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Add-on di Home Assistant locale" />
+        </service>
+        <service
+            android:name=".addon.AddonService2"
+            android:process=":addon2"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Add-on di Home Assistant locale" />
+        </service>
+        <service
+            android:name=".addon.AddonService3"
+            android:process=":addon3"
+            android:directBootAware="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Add-on di Home Assistant locale" />
+        </service>
+
         <receiver
             android:name=".BootReceiver"
             android:directBootAware="true"

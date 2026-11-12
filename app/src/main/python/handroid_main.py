@@ -97,6 +97,18 @@ def installa_pacchetto(package, upgrade=True, target=None, constraints=None, tim
             return e.code == 0
 
 
+def copia_integrazione():
+    """Mette custom_components/handroid (pannello add-on, 0007) nella config di HA,
+    aggiornata a ogni avvio: è l'APK a dettarne la versione, non l'utente."""
+    import shutil
+
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "custom_components", "handroid")
+    if os.path.isdir(src):
+        dst = os.path.join(CONFIG, "custom_components", "handroid")
+        shutil.rmtree(dst, ignore_errors=True)
+        shutil.copytree(src, dst)
+
+
 def avvia_home_assistant():
     from homeassistant.__main__ import main
     from homeassistant.util import package
@@ -104,6 +116,7 @@ def avvia_home_assistant():
     package.install_package = installa_pacchetto
 
     os.makedirs(CONFIG, exist_ok=True)
+    copia_integrazione()
     # --runner: al riavvio HA esce con codice 100 invece di rieseguirsi (execv è
     # vietato su Android); il servizio chiude il processo e Android lo riavvia.
     sys.argv = ["hass", "--config", CONFIG, "--runner"]

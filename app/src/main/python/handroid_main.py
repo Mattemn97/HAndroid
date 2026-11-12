@@ -18,6 +18,14 @@ PORT = 8123
 CONFIG = os.environ.get("HANDROID_CONFIG", os.path.expanduser("~/config"))
 SITE = os.environ.get("HANDROID_SITE", os.path.expanduser("~/site-packages"))
 SAFE_MODE = os.environ.get("HANDROID_SAFE_MODE") == "1"
+BASE = os.path.dirname(CONFIG)
+# Aggiornamento di HA dall'app (spec 0006): una versione installata con pip in HA_DIR
+# sta in testa a sys.path e vince su site-packages e site.zip; HA_PREV serve al rollback.
+HA_DIR = os.path.join(BASE, "ha")
+HA_PREV = os.path.join(BASE, "ha.prev")
+HA_NUOVO = os.path.join(BASE, "ha.nuovo")
+RICHIESTA = os.path.join(BASE, "aggiorna_ha")  # contiene la versione chiesta dall'app
+IN_PROVA = os.path.join(BASE, "ha.prova")      # c'è finché il watchdog non vede HA sano
 INDICE = "https://github.com/Mattemn97/HAndroid/releases/download/wheels/index.html"
 ERRORE = None  # perché HA non è partito, mostrato nella pagina di stato
 
@@ -82,7 +90,7 @@ def installa_pacchetto(package, upgrade=True, target=None, constraints=None, tim
     from pip._internal.cli.main import main as pip
 
     args = ["install", "--quiet", "--disable-pip-version-check", "--only-binary", ":all:",
-            "--target", SITE, "--find-links", INDICE, package]
+            "--target", target or SITE, "--find-links", INDICE, package]
     if upgrade:
         args.append("--upgrade")
     if constraints:
@@ -95,6 +103,38 @@ def installa_pacchetto(package, upgrade=True, target=None, constraints=None, tim
             return pip(args) == 0
         except SystemExit as e:
             return e.code == 0
+
+
+def log_supervisore(msg):
+    """Stesso registro scritto dal lato Kotlin (Supervisore.kt), mostrato nella schermata di stato."""
+    import time
+    with open(os.path.join(BASE, "supervisore.log"), "a", encoding="utf-8") as f:
+        f.write(time.strftime("%Y-%m-%d %H:%M:%S") + " " + msg + "
+")
+    print(msg, flush=True)
+
+
+def applica_aggiornamento():
+    """Se l'app ha chiesto una versione di HA, la installa in HA_NUOVO e scambia le cartelle.
+    Se pip fallisce non cambia niente: resta la versione di prima."""
+    import shutil
+    if not os.path.isfile(RICHIESTA):
+        return
+    with open(RICHIESTA, encoding="utf-8") as f:
+        versione = f.read().strip()
+    os.remove(RICHIESTA)
+    shutil.rmtree(HA_NUOVO, ignore_errors=True)
+    log_supervisore(f"Installo homeassistant=={versione}")
+    if not installa_pacchetto(f"homeassistant=={versione}", target=HA_NUOVO):
+        shutil.rmtree(HA_NUOVO, ignore_errors=True)
+        log_supervisore(f"Aggiornamento a {versione} fallito: resta la versione attuale")
+        return
+    shutil.rmtree(HA_PREV, ignore_errors=True)
+    if os.path.isdir(HA_DIR):
+        os.rename(HA_DIR, HA_PREV)
+    os.rename(HA_NUOVO, HA_DIR)
+    open(IN_PROVA, "w").close()
+    log_supervisore(f"Home Assistant {versione} installato, in prova")
 
 
 def avvia_home_assistant():
@@ -114,9 +154,18 @@ def main():
     global ERRORE
     if not SAFE_MODE:
         try:
+            applica_aggiornamento()
+        except Exception:
+            traceback.print_exc()
+        if os.path.isdir(HA_DIR):
+            sys.path.insert(0, HA_DIR)
+        try:
             # Prima importa il necessario: se manca una dipendenza nativa lo si vede subito.
             import homeassistant.__main__  # noqa: F401
             import homeassistant.bootstrap  # noqa: F401
+            from homeassistant.const import __version__
+            with open(os.path.join(BASE, "versione_ha"), "w", encoding="utf-8") as f:
+                f.write(__version__)
         except Exception as e:
             ERRORE = f"{type(e).__name__}: {e}"
             traceback.print_exc()

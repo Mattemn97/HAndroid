@@ -12,7 +12,7 @@ Telefono resettato, senza account, debug USB attivo, collegato al PC:
 ./scripts/installa-handroid.sh --device-owner
 ```
 
-Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/releases), installa l'APK, rende l'app device owner (così HyperOS non la chiude) e toglie le restrizioni di batteria. Poi apri `http://IP-DEL-TELEFONO:8123`. Le scelte di progetto sono in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md).
+Lo script scarica l'ultima [release](https://github.com/Mattemn97/HAndroid/releases), installa l'APK, rende l'app device owner (così HyperOS non la chiude) e toglie le restrizioni di batteria. Poi apri `http://IP-DEL-TELEFONO:8123`. Toccando la notifica del server (o tenendo premuto Indietro nell'app) si apre la schermata di stato: backup (automatico ogni notte alle 3:30, ultimi 7 in `config/backups`), aggiornamento di Home Assistant con ritorno automatico alla versione precedente se non parte, riavvio e registro ([spec 0006](docs/specs/0006-supervisore-m1.md)). Le scelte di progetto sono in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md).
 
 ---
 

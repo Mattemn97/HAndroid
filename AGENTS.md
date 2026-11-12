@@ -17,6 +17,8 @@ bash scripts/prepara-python.sh
 bash scripts/prepara-ha.sh
 # Build (JDK 17, Android SDK + NDK, Gradle 8.10)
 gradle :app:assembleRelease
+# Test JVM della logica pura (Regole.kt)
+gradle :app:testReleaseUnitTest
 # Installa sul telefono collegato via ADB (ultima release, o un APK locale)
 bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 # Release: automatica a ogni push su master che tocca l'app (.github/workflows/release.yml)
@@ -29,6 +31,7 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
 - Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
 - `jniLibs/`, `assets/python.zip` e `assets/site.zip` sono generati: non si committano.
+- Lo stato condiviso tra il processo dell'app e `:ha` sta in file nella cartella base (vedi spec 0006), mai nelle SharedPreferences.
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
 
 ## Specifiche

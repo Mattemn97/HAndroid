@@ -3,6 +3,7 @@ package it.handroid
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -34,7 +35,7 @@ class HaService : Service() {
         val prefs = createDeviceProtectedStorageContext().getSharedPreferences("supervisore", Context.MODE_PRIVATE)
         val falliti = prefs.getInt(AVVII_FALLITI, 0)
         prefs.edit().putInt(AVVII_FALLITI, falliti + 1).apply()
-        val safeMode = falliti >= MAX_FALLITI
+        val safeMode = Supervisore.alAvvio(this, prefs, falliti, MAX_FALLITI)
         if (safeMode) Log.w(TAG, "Modalità provvisoria: $falliti avvii falliti di fila")
 
         Thread({
@@ -45,7 +46,7 @@ class HaService : Service() {
             Process.killProcess(Process.myPid())
         }, "python").start()
 
-        Thread({ watchdog { prefs.edit().putInt(AVVII_FALLITI, 0).apply() } }, "watchdog").start()
+        Thread({ watchdog { prefs.edit().putInt(AVVII_FALLITI, 0).apply(); Supervisore.sano(this) } }, "watchdog").start()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int) = START_STICKY
@@ -104,6 +105,8 @@ class HaService : Service() {
             .setContentText("http://<ip-del-telefono>:8123")
             .setSmallIcon(android.R.drawable.stat_sys_upload_done)
             .setOngoing(true)
+            // Tocco: schermata di stato e impostazioni (spec 0006).
+            .setContentIntent(PendingIntent.getActivity(this, 0, Intent(this, StatoActivity::class.java), PendingIntent.FLAG_IMMUTABLE))
             .build()
         if (Build.VERSION.SDK_INT >= 34) startForeground(1, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE)
         else startForeground(1, n)

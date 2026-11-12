@@ -1,1 +1,14 @@
 .agents/
+.claude/worktrees/
+.gradle/
+build/
+app/build/
+app/.cxx/
+app/src/main/jniLibs/
+app/src/main/assets/python.zip
+local.properties
+*.jks
+*.keystore
+*.apk
+.idea/
+*.iml

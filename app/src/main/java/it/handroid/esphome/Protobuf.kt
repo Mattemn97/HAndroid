@@ -11,6 +11,8 @@ class ProtoWriter {
 
     fun varint(campo: Int, v: Long) = apply { if (v != 0L) { tag(campo, 0); rawVarint(out, v) } }
     fun uint(campo: Int, v: Int) = varint(campo, v.toLong() and 0xFFFFFFFFL)
+    // sint32: zigzag, così i negativi (es. RSSI) restano corti.
+    fun sint(campo: Int, v: Int) = uint(campo, (v shl 1) xor (v shr 31))
     fun bool(campo: Int, v: Boolean) = varint(campo, if (v) 1 else 0)
     fun fixed32(campo: Int, v: Int) = apply { if (v != 0) { tag(campo, 5); rawFixed32(v) } }
     // Il float a zero si scrive comunque: 0.0 è un valore, non "assente".

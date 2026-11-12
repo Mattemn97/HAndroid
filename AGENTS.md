@@ -35,6 +35,8 @@ bash scripts/installa-handroid.sh [file.apk] [--device-owner]
 - `jniLibs/`, `assets/python.zip` e `assets/site.zip` sono generati: non si committano.
 - Lo stato condiviso tra il processo dell'app e `:ha` sta in file nella cartella base (vedi spec 0006), mai nelle SharedPreferences.
 - Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
+- Un add-on Python gira in un processo del pool `:addon1..3` (mai in `:ha`: CPython parte una volta per processo); per averne di più si aggiunge un `AddonServiceN` nel manifest e si alza `AddonStato.SLOT`. Formato e API in [0007](docs/specs/0007-addon.md).
+- Test JVM: `gradle :app:testReleaseUnitTest` (org.json vero solo nei test).
 
 ## Specifiche
 

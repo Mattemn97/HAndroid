@@ -20,6 +20,8 @@ HAndroid si presenta a Home Assistant come un dispositivo **ESPHome** chiamato *
 
 Lo stesso dispositivo fa anche da **proxy Bluetooth**: i termometri Xiaomi BLE (e gli altri sensori Bluetooth) compaiono in HA senza un ESP32 ([spec 0005](docs/specs/0005-proxy-bluetooth.md)).
 
+**Add-on.** In HA aggiungi l'integrazione *HAndroid* (Impostazioni → Dispositivi e servizi): ogni add-on dei repository compare come dispositivo, si installa e si rimuove con i servizi `handroid.install` / `handroid.uninstall`, si avvia con il suo interruttore e si configura dalle opzioni dell'integrazione. Il repository ufficiale è la cartella [`addons/`](addons/) (per ora un broker MQTT in puro Python); altri si aggiungono con `handroid.repository`. Dettagli in [docs/specs/0007-addon.md](docs/specs/0007-addon.md).
+
 ---
 
 ## Contenuto della cartella

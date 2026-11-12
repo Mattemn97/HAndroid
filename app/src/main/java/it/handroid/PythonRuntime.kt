@@ -27,20 +27,34 @@ object PythonRuntime {
         Os.setenv("HANDROID_CONFIG", config.path, true)
         Os.setenv("HANDROID_SITE", sitePackages.path, true)
         Os.setenv("HANDROID_SAFE_MODE", if (safeMode) "1" else "0", true)
+        // Cartella degli add-on: l'integrazione custom_components/handroid ci legge il token.
+        Os.setenv("HANDROID_ADDONS", File(base, "addons").path, true)
         Os.setenv("HOME", base.path, true)
         Os.setenv("TMPDIR", ctx.cacheDir.path, true)
 
+        // HA e dipendenze inclusi nell'APK (python/site) dopo site-packages, così un
+        // pacchetto aggiornato a runtime vince su quello di serie.
+        return esegui(home, listOf(sitePackages, File(home, "site")), "handroid_main")
+    }
+
+    /**
+     * Avvia un add-on Python nel processo corrente (uno del pool `:addonN`, mai `:ha`:
+     * CPython si inizializza una volta sola per processo). Blocca finché l'add-on non esce.
+     */
+    fun avviaAddon(ctx: Context, cartella: File): Int {
+        val home = File(base(ctx), "python")
+        prepara(ctx, home)
+        Os.setenv("HANDROID_ADDON_DIR", cartella.path, true)
+        Os.setenv("HOME", cartella.path, true)
+        Os.setenv("TMPDIR", ctx.cacheDir.path, true)
+        // I pacchetti dell'add-on prima di tutto; python/site serve per pip.
+        return esegui(home, listOf(File(cartella, "site"), cartella, File(home, "site")), "handroid_addon")
+    }
+
+    private fun esegui(home: File, extra: List<File>, modulo: String): Int {
         val lib = File(home, "lib/python3.14")
-        val paths = arrayOf(
-            File(home, "app").path,
-            lib.path,
-            File(lib, "lib-dynload").path,
-            sitePackages.path,
-            // HA e dipendenze inclusi nell'APK: dopo site-packages, così un pacchetto
-            // aggiornato a runtime vince su quello di serie.
-            File(home, "site").path,
-        )
-        return runModule(home.path, paths, "handroid_main")
+        val paths = listOf(File(home, "app"), lib, File(lib, "lib-dynload")) + extra
+        return runModule(home.path, paths.map { it.path }.toTypedArray(), modulo)
     }
 
     /** Estrae assets/python.zip (e site.zip, se c'è) solo quando l'APK cambia. */

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chiavette che aprono HAndroid quando vengono collegate (vendor-id/product-id decimali). -->
+<resources>
+    <!-- Silicon Labs CP210x: Sonoff ZBDongle-P, Home Assistant ZBT-1/SkyConnect, molte Z-Wave -->
+    <usb-device vendor-id="4292" product-id="60000" />
+    <usb-device vendor-id="4292" product-id="60016" />
+    <!-- WCH CH9102 (CDC-ACM): Sonoff ZBDongle-E -->
+    <usb-device vendor-id="6790" product-id="21972" />
+    <!-- dresden elektronik ConBee II e III -->
+    <usb-device vendor-id="7409" product-id="48" />
+    <usb-device vendor-id="7409" product-id="49" />
+    <!-- Sigma Designs / Aeotec Z-Stick 7 e chiavette Z-Wave 700/800 CDC-ACM -->
+    <usb-device vendor-id="1624" product-id="512" />
+</resources>

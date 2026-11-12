@@ -34,6 +34,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Si apre quando si collega una chiavetta Zigbee/Z-Wave: dà il permesso USB e sveglia il ponte. -->
+        <activity
+            android:name=".UsbAttivita"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.NoDisplay">
+            <intent-filter>
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED"
+                android:resource="@xml/usb_device_filter" />
+        </activity>
+
         <!-- Processo separato: se Python si blocca il watchdog chiude solo questo. -->
         <service
             android:name=".HaService"

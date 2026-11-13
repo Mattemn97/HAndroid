@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <script src="mf-log.js" data-app="handroid"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HAndroid · Matteo Filippini</title>
+  <meta name="description" content="Home Assistant Core nativo su Android, senza root: Python 3.14 dentro l'APK, sempre acceso su un vecchio telefono. Con l'indice dei pacchetti Android per le integrazioni.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%237c5cff'/><text x='50' y='68' font-size='56' text-anchor='middle'>🏠</text></svg>">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="mf-theme.css">
+  <link rel="stylesheet" href="stile.css">
+  <script src="mf-theme.js"></script>
+</head>
+<body>
+
+<header class="mf-topbar">
+  <a class="mf-home" href="https://mattemn97.github.io/" title="Torna al sito di Matteo Filippini"><span class="mf-mark">MF</span><span class="mf-home-name">Matteo Filippini</span></a>
+  <span class="mf-sep">/</span>
+  <h1 class="mf-app-title"><i class="fa-solid fa-house-signal"></i> HAndroid</h1>
+  <div class="mf-topbar-actions">
+    <a class="mf-icon-btn" href="https://github.com/Mattemn97/HAndroid" target="_blank" rel="noopener" aria-label="Codice su GitHub"><i class="fa-brands fa-github"></i></a>
+    <button class="mf-icon-btn" id="mfTheme" type="button" aria-label="Cambia tema"><i class="fa-solid fa-circle-half-stroke"></i></button>
+  </div>
+</header>
+
+<main class="mf-main">
+  <section class="mf-hero">
+    <p class="mf-eyebrow">Android 7+ · arm64 · senza root · in sviluppo</p>
+    <h1>Home Assistant su un vecchio telefono</h1>
+    <p>
+      HAndroid è un'app che contiene Home Assistant Core e il suo Python 3.14. La installi su un telefono che non usi
+      più, la lasci in carica, e diventa il server della tua casa: sempre acceso, con Wi-Fi, Bluetooth e USB a portata
+      di mano, senza Raspberry Pi e senza root.
+    </p>
+    <div class="azioni">
+      <a class="mf-btn mf-btn-primary" href="https://github.com/Mattemn97/HAndroid/releases"><i class="fa-solid fa-download"></i> Rilasci</a>
+      <a class="mf-btn" href="#indice"><i class="fa-solid fa-box-open"></i> Indice dei pacchetti</a>
+    </div>
+  </section>
+
+  <section class="mf-grid schede">
+    <article class="mf-card mf-anim" style="--i:0">
+      <h2><i class="fa-brands fa-python"></i> Home Assistant vero</h2>
+      <p class="muted">Lo stesso Home Assistant Core di un Raspberry, non una versione ridotta: interfaccia, automazioni, backup e integrazioni.</p>
+    </article>
+    <article class="mf-card mf-anim" style="--i:1">
+      <h2><i class="fa-solid fa-heart-pulse"></i> Sempre acceso</h2>
+      <p class="muted">Riparte da solo dopo un crash, un riavvio del telefono o un aggiornamento, e tiene il Wi-Fi attivo a schermo spento.</p>
+    </article>
+    <article class="mf-card mf-anim" style="--i:2">
+      <h2><i class="fa-solid fa-puzzle-piece"></i> Integrazioni</h2>
+      <p class="muted">Le aggiungi dall'interfaccia come al solito: i pacchetti nativi arrivano già compilati per Android dall'indice qui sotto.</p>
+    </article>
+  </section>
+
+  <section class="mf-card tappe">
+    <div class="mf-card-head"><h2><i class="fa-solid fa-route"></i> A che punto è</h2></div>
+    <ol class="elenco-tappe">
+      <li class="fatto"><span class="mf-step">0</span><div><strong>Fattibilità</strong><span class="muted">HA parte dentro l'APK sul telefono.</span></div><span class="mf-pill">fatto</span></li>
+      <li class="corso"><span class="mf-step">1</span><div><strong>Server affidabile</strong><span class="muted">Riavvii automatici, integrazioni installabili, backup.</span></div><span class="mf-pill">in prova</span></li>
+      <li><span class="mf-step">2</span><div><strong>Hardware del telefono</strong><span class="muted">Bluetooth, chiavette Zigbee via USB, sensori.</span></div><span class="mf-pill">da fare</span></li>
+      <li><span class="mf-step">3</span><div><strong>Add-on</strong><span class="muted">Servizi aggiuntivi come MQTT, installabili dall'app.</span></div><span class="mf-pill">da fare</span></li>
+      <li><span class="mf-step">4</span><div><strong>Rilascio</strong><span class="muted">APK firmato su GitHub e F-Droid.</span></div><span class="mf-pill">da fare</span></li>
+    </ol>
+  </section>
+
+  <section class="mf-card" id="indice">
+    <div class="mf-card-head">
+      <h2><i class="fa-solid fa-box-open"></i> Indice dei pacchetti Android</h2>
+      <span class="mf-pill" id="conteggio"><span class="mf-spinner"></span></span>
+    </div>
+    <p class="muted">
+      Alcune integrazioni di Home Assistant usano librerie con codice nativo che PyPI non pubblica per Android.
+      Le compiliamo noi per arm64 e Python 3.14; l'app le scarica da qui quando aggiungi l'integrazione.
+      Per pip l'indice è <code class="mono" id="urlIndice">wheels/</code>.
+    </p>
+    <div class="mf-search">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input id="q" class="mf-input" type="search" autocomplete="off" placeholder="Cerca un pacchetto…" aria-label="Cerca un pacchetto">
+    </div>
+    <div class="mf-table-wrap">
+      <table class="mf-table">
+        <thead><tr><th>Pacchetto</th><th>Versione</th><th>Tipo</th><th>Dimensione</th></tr></thead>
+        <tbody id="righe"><tr><td colspan="4" class="muted"><span class="mf-spinner"></span> Caricamento…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer class="mf-footer">
+  © <span id="anno"></span> Matteo Filippini · <a href="https://github.com/Mattemn97/HAndroid" target="_blank" rel="noopener">Codice su GitHub</a> ·
+  Home Assistant è un marchio della Open Home Foundation; HAndroid non è un progetto ufficiale.
+</footer>
+
+<script src="sito.js"></script>
+</body>
+</html>

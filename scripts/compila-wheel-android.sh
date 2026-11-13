@@ -9,18 +9,20 @@
 #  rustup target add aarch64-linux-android
 #
 #  Uso: scripts/compila-wheel-android.sh [pacchetto ...]   (default: tutti)
+#       DEPS=docs/dipendenze-indice.md scripts/compila-wheel-android.sh   (pacchetti per l'indice)
+#  Salta i pacchetti che hanno già un wheel in wheels/ (FORZA=1 per ricompilarli).
 #  A fine giro stampa quali sono riusciti e quali no.
 # =============================================================================
 set -uo pipefail
 cd "$(dirname "$0")/.."
 
-DEPS=docs/dipendenze-android.md
+DEPS="${DEPS:-docs/dipendenze-android.md}"
 mkdir -p wheels build/sdist
 
 # righe "| nome | versione |" delle sezioni "Da compilare" e "Solo sorgente" (hanno solo lo sdist,
 # a volte con codice C: es. pyspeex-noise), senza i pacchetti in android-rinviati.txt
 SKIP='^('$(awk '!/^#/ && NF {printf "%s%s", s, $1; s="|"}' scripts/android-rinviati.txt)')=='
-list=$(sed -n '/^## Da compilare/,/^## Wheel Android/p' "$DEPS" \
+list=$(awk '/^## /{on=/^## (Da compilare|Solo sorgente)/} on' "$DEPS" \
   | sed -n 's/^| \([a-z0-9._-]*\) | \([0-9][^ ]*\) | .*/\1==\2/p' | grep -vE "$SKIP")
 
 # Librerie C per Android preparate da prepara-wsl.sh. PIP_FIND_LINKS serve ai pacchetti che per
@@ -42,12 +44,16 @@ if [ $# -gt 0 ]; then
 fi
 
 mkdir -p build/log
-ok=() puri=() ko=()
+ok=() puri=() ko=() gia=()
 build() {  # $1 = log; variabili CIBW_* aggiuntive dall'ambiente
   CIBW_BUILD="cp314-*" cibuildwheel --platform android --archs arm64_v8a \
     --output-dir wheels build/sdist/* >"$1" 2>&1
 }
 for req in $list; do
+  name=${req%%==*} version=${req##*==}
+  if [ -z "${FORZA:-}" ] && { compgen -G "wheels/${name//-/_}-$version-*.whl" || compgen -G "wheels/$name-$version-*.whl"; } >/dev/null; then
+    gia+=("$req"); continue
+  fi
   echo "==> $req"
   log="build/log/${req%%==*}.log"
   rm -rf build/sdist/*
@@ -63,6 +69,11 @@ for req in $list; do
                    CIBW_ENVIRONMENT_ANDROID="$CIBW_ENVIRONMENT_ANDROID ZLIB_ROOT=$ANDROID_DEPS") ;;
     # numpy: il suo pyproject abilita "cpython-freethreading", gruppo che cibuildwheel non conosce più e
     # che CIBW_ENABLE non scavalca: si toglie la riga dallo sdist
+    # psutil: Android è un Linux, ma psutil guarda sys.platform == "linux" e si rifiuta di compilare
+    psutil) (cd build/sdist && f=$(ls psutil-*.tar.gz) && d=${f%.tar.gz} && tar xzf "$f" && rm "$f" \
+             && sed -i 's/^LINUX = sys.platform.startswith("linux")/LINUX = sys.platform.startswith(("linux", "android"))/' "$d/psutil/_common.py" \
+             && grep -q '"android"' "$d/psutil/_common.py" && tar czf "$f" "$d" && rm -rf "$d")
+           extra=(CIBW_TEST_SKIP="*") ;;
     numpy) (cd build/sdist && f=$(ls numpy-*.tar.gz) && d=${f%.tar.gz} && tar xzf "$f" && rm "$f" \
              && sed -i '/^enable = \["cpython-freethreading"/d' "$d/pyproject.toml" && tar czf "$f" "$d" && rm -rf "$d")
            # senza OpenBLAS (non c'è per Android; a HA basta numpy di base), come per Pyodide; niente test sul telefono
@@ -76,12 +87,19 @@ for req in $list; do
   elif grep -q "does not look like a platform wheel" "$log" \
        && CIBW_REPAIR_WHEEL_COMMAND_ANDROID="cp {wheel} {dest_dir}" build "$log"; then
     puri+=("$req")
+  # nessun codice nativo (solo sdist, ma puro): wheel py3-none-any, così il telefono non deve costruirlo
+  elif grep -q "pure Python wheel was generated" "$log" \
+       && { pip wheel --no-deps --no-binary "$name" -w wheels "$req" >>"$log" 2>&1
+            # pip a volte esce con errore dopo aver salvato il wheel: conta il file
+            compgen -G "wheels/${name//-/_}-$version-*.whl" >/dev/null || compgen -G "wheels/$name-$version-*.whl" >/dev/null; }; then
+    puri+=("$req")
   else
     ko+=("$req")
     tail -5 "$log"
   fi
 done
 echo
+echo "Già in wheels/:           ${#gia[@]}"
 echo "Compilati:                ${ok[*]:-nessuno}"
 echo "Senza estensione nativa:  ${puri[*]:-nessuno}"
 echo "Falliti (log in build/log): ${ko[*]:-nessuno}"

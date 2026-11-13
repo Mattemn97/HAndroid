@@ -2,5 +2,7 @@
 # Home Assistant parte lo stesso; le integrazioni che li usano non si caricano.
 # Formato: nome  motivo. Togli la riga quando il pacchetto si compila.
 psutil   rifiuta sys.platform "android"; serve all'integrazione System Monitor
-uv       è un eseguibile, non una libreria; HA parte con --skip-pip
+uv       è un eseguibile, non una libreria; handroid_boot.py lo sostituisce con pip
 grpcio   la copia interna di c-ares non trova ares_config.h su Android; serve solo all'integrazione Cloud (hass-nabucasa)
+av  usa le librerie di FFmpeg, da compilare a parte per Android (telecamere e stream)
+lxml  richiede libxml2 e libxslt per Android

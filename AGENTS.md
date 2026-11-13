@@ -20,6 +20,8 @@ scripts/compila-wheel-android.sh
 scripts/prepara-python-android.sh
 # Build e installazione sul telefono
 ./gradlew installDebug
+# Test
+./gradlew testDebugUnitTest
 # Log
 adb logcat -s HAndroid python.stdout python.stderr
 ```
@@ -32,6 +34,9 @@ adb logcat -s HAndroid python.stdout python.stderr
 - Un cambio al formato degli add-on va in `docs/addon/README.md`, con una riga nello storico in fondo.
 - In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows.
 - `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.
+- Le integrazioni installate a runtime con pacchetti nativi vanno in `scripts/integrazioni-indice.txt` (tabella `docs/dipendenze-indice.md`).
+- La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages`, che ha un solo commit riscritto ogni volta.
+- Stato condiviso tra il processo dell'app e `:ha`: file in `files/`, non SharedPreferences.
 - Le librerie delle integrazioni caricate all'avvio vanno in `scripts/integrazioni-base.txt`; i pacchetti nativi che non si compilano in `scripts/android-rinviati.txt`, col motivo.
 - Su Windows `sdkmanager.bat` spezza gli argomenti al `;`: passare i pacchetti con `--package_file`.
 - Quando cambia la versione di HA, rigenera `docs/dipendenze-android.md`: gli script di build leggono le versioni da lì.

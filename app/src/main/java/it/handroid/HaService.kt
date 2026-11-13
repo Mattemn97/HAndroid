@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
@@ -16,12 +17,19 @@ import android.util.Log
 import androidx.core.app.ServiceCompat
 import java.io.File
 import java.io.FilterInputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.zip.ZipInputStream
 import kotlin.concurrent.thread
 
-/** Servizio in primo piano che avvia Home Assistant nel processo ":ha". */
+/**
+ * Servizio in primo piano che avvia Home Assistant nel processo ":ha" e lo sorveglia.
+ * Il processo vive quanto un giro di HA: quando HA esce, il processo muore e, se serve, il
+ * supervisor lo fa ripartire (vedi [Supervisor]).
+ */
 class HaService : Service() {
     private var started = false
+    @Volatile private var stopping = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -30,26 +38,106 @@ class HaService : Service() {
             this, 1, notification(),
             if (Build.VERSION.SDK_INT >= 34) ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE else 0,
         )
+        if (intent?.action == ACTION_STOP) {
+            stop("Home Assistant fermato dall'app")
+            return START_NOT_STICKY
+        }
         if (!started) {
             started = true
-            thread(name = "hass") {
-                val wakeLock = getSystemService(PowerManager::class.java)
-                    .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "HAndroid:hass")
-                wakeLock.acquire()
-                val code = try {
-                    runHomeAssistant()
-                } catch (e: Throwable) {
-                    Log.e(TAG, "Avvio fallito", e)
-                    -1
-                }
-                Log.w(TAG, "Home Assistant terminato con codice $code")
-                setStatus(this, "Home Assistant fermo (codice $code)")
-                wakeLock.release()
-                stopSelf()
-                Process.killProcess(Process.myPid())
-            }
+            Supervisor.setAutostart(this, true)
+            // il giro precedente è finito senza passare da restart() o stop(): processo ucciso di colpo
+            if (Supervisor.markRunning(this)) Supervisor.recordCrash(this)
+            Supervisor.scheduleSafetyNet(this)
+            setStatus(this, "Avvio del servizio…")  // cancella lo stato del giro precedente
+            thread(name = "hass") { runAndSupervise() }
+            thread(name = "watchdog", isDaemon = true) { watchdog() }
         }
         return START_STICKY
+    }
+
+    private fun runAndSupervise() {
+        val wakeLock = getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "HAndroid:hass")
+        // Wi-Fi sempre attivo anche a schermo spento, e multicast per mDNS (scoperta dei dispositivi)
+        val wifi = applicationContext.getSystemService(WifiManager::class.java)
+        @Suppress("DEPRECATION")
+        val wifiLock = wifi.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "HAndroid:wifi")
+        val multicastLock = wifi.createMulticastLock("HAndroid:mdns")
+        wakeLock.acquire()
+        wifiLock.acquire()
+        multicastLock.acquire()
+        val code = try {
+            runHomeAssistant()
+        } catch (e: Throwable) {
+            Log.e(TAG, "Avvio fallito", e)
+            -1
+        }
+        Log.w(TAG, "Home Assistant terminato con codice $code")
+        when {
+            stopping -> {}
+            code == 0 -> stop("Home Assistant fermato dall'interfaccia")
+            code == Supervisor.RESTART_EXIT_CODE -> restart("Riavvio richiesto da Home Assistant", 1000)
+            else -> crashed("Home Assistant terminato con codice $code")
+        }
+        multicastLock.release()
+        wifiLock.release()
+        wakeLock.release()
+    }
+
+    /**
+     * Ogni 30 secondi controlla che HA risponda. Dopo 3 controlli falliti di fila lo considera bloccato
+     * e lo riavvia. Parte quando HA è pronto (o dopo 20 minuti, se non lo diventa mai).
+     */
+    private fun watchdog() {
+        val begin = System.currentTimeMillis()
+        while (statusFile(this).readText() != READY && System.currentTimeMillis() - begin < 20 * 60_000L) {
+            Thread.sleep(5_000)
+            Supervisor.scheduleSafetyNet(this)
+        }
+        val readyAt = System.currentTimeMillis()
+        var failures = 0
+        var stable = false
+        while (!stopping) {
+            Thread.sleep(30_000)
+            Supervisor.scheduleSafetyNet(this)
+            failures = if (responds()) 0 else failures + 1
+            if (failures >= 3) {
+                crashed("Home Assistant non risponde da 90 secondi")
+                return
+            }
+            if (!stable && System.currentTimeMillis() - readyAt > Supervisor.STABLE_AFTER_MS) {
+                stable = true
+                Supervisor.resetCrashes(this)
+            }
+        }
+    }
+
+    private fun crashed(reason: String) {
+        val crashes = Supervisor.recordCrash(this)
+        val recovery = crashes >= Supervisor.MAX_CRASHES
+        Log.e(TAG, "$reason (crash $crashes di fila)")
+        restart(
+            if (recovery) "$reason. Troppi errori: riparto in modalità di ripristino" else "$reason. Riavvio…",
+            if (recovery) 5_000 else 10_000,
+        )
+    }
+
+    private fun restart(reason: String, delayMs: Long) {
+        stopping = true
+        setStatus(this, reason)
+        Supervisor.clearRunning(this)
+        Supervisor.scheduleRestart(this, delayMs)
+        Process.killProcess(Process.myPid())
+    }
+
+    private fun stop(reason: String) {
+        stopping = true
+        setStatus(this, reason)
+        Supervisor.setAutostart(this, false)
+        Supervisor.clearRunning(this)
+        Supervisor.cancelRestart(this)
+        stopSelf()
+        Process.killProcess(Process.myPid())
     }
 
     private fun runHomeAssistant(): Int {
@@ -63,11 +151,10 @@ class HaService : Service() {
         // (Android non ha resolv.conf)
         File(filesDir, "dns.txt").writeText(dnsServers().joinToString(","))
         setStatus(this, "Carico Python e Home Assistant (dopo un'installazione anche 2-3 minuti)…")
-        Log.i(TAG, "Avvio Home Assistant, configurazione in $config")
-        return PythonRunner.runModule(
-            home.path, File(home, "site-packages").path, "handroid_boot",
-            arrayOf("hass", "--config", config.path, "--skip-pip"),
-        )
+        val args = mutableListOf("hass", "--config", config.path)
+        if (Supervisor.recoveryMode(this)) args += "--recovery-mode"
+        Log.i(TAG, "Avvio Home Assistant: ${args.joinToString(" ")}")
+        return PythonRunner.runModule(home.path, File(home, "site-packages").path, "handroid_boot", args.toTypedArray())
     }
 
     /** Estrae python.zip (stdlib e site-packages) a ogni nuova installazione dell'APK. */
@@ -134,6 +221,21 @@ class HaService : Service() {
     companion object {
         private const val TAG = "HAndroid"
         private const val CHANNEL = "server"
+        private const val ACTION_STOP = "it.handroid.STOP"
+
+        /** Testo che handroid_boot.py scrive quando HA ha finito di avviarsi. */
+        const val READY = "Home Assistant pronto"
+
+        /** L'interfaccia di HA risponde su questo telefono. */
+        fun responds() = try {
+            (URL("http://127.0.0.1:8123/manifest.json").openConnection() as HttpURLConnection).run {
+                connectTimeout = 5_000
+                readTimeout = 10_000
+                (responseCode == 200).also { disconnect() }
+            }
+        } catch (e: Exception) {
+            false
+        }
 
         /** Ultimo passo dell'avvio, scritto da qui e da handroid_boot.py, mostrato da MainActivity. */
         fun statusFile(context: Context) = File(context.filesDir, "stato.txt")
@@ -142,6 +244,12 @@ class HaService : Service() {
 
         fun start(context: Context) {
             val intent = Intent(context, HaService::class.java)
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
+        }
+
+        /** Ferma HA e disattiva l'avvio automatico finché non lo riavvii dall'app. */
+        fun stop(context: Context) {
+            val intent = Intent(context, HaService::class.java).setAction(ACTION_STOP)
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
         }
     }

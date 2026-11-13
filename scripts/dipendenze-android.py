@@ -8,10 +8,16 @@ Legge i metadati da PyPI, segue le dipendenze ricorsivamente con i marker di And
   sorgente  solo sdist: probabilmente puro, da verificare
 
 Uso:  python scripts/dipendenze-android.py [versione-ha] > docs/dipendenze-android.md
+      python scripts/dipendenze-android.py <versione-ha> scripts/integrazioni-indice.txt > docs/dipendenze-indice.md
+      python scripts/dipendenze-android.py <versione-ha> tutte > docs/dipendenze-tutte.md
+Con il secondo argomento elenca le dipendenze delle integrazioni di quel file (non incluse nell'APK, i
+loro pacchetti nativi vanno nell'indice dei wheel) invece di quelle del core. "tutte" = ogni integrazione di HA.
 """
 import json
+import pathlib
 import sys
 import urllib.request
+import zipfile
 from concurrent.futures import ThreadPoolExecutor
 
 from pip._vendor.packaging.requirements import Requirement
@@ -71,11 +77,26 @@ def deps(info):
     return out
 
 
-def manifest_requirements(ha_version):
-    """Requisiti delle integrazioni in integrazioni-base.txt e delle loro dependencies."""
-    base = "https://raw.githubusercontent.com/home-assistant/core/" + ha_version + "/homeassistant/components/"
-    path = __file__.rsplit("/", 1)[0].rsplit("\\", 1)[0] + "/integrazioni-base.txt"
-    todo = [l.strip() for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
+def ha_wheel(ha_version):
+    """Wheel di Home Assistant (da PyPI, in cache in build/): da lì si leggono i manifest delle integrazioni.
+    raw.githubusercontent.com limita le richieste e con molti manifest risponde 429."""
+    cache = pathlib.Path(__file__).resolve().parent.parent / "build" / f"homeassistant-{ha_version}.whl"
+    if not cache.exists():
+        url = next(f["url"] for f in pypi("homeassistant", ha_version)["urls"] if f["filename"].endswith(".whl"))
+        cache.parent.mkdir(exist_ok=True)
+        with urllib.request.urlopen(url, timeout=120) as r:
+            cache.write_bytes(r.read())
+    return zipfile.ZipFile(cache)
+
+
+def manifest_requirements(ha_version, path):
+    """Requisiti delle integrazioni nel file (una per riga) e delle loro dependencies."""
+    wheel = ha_wheel(ha_version)
+    if path == "tutte":  # tutte le integrazioni di HA: è l'elenco dell'indice online
+        todo = [n.split("/")[2] for n in wheel.namelist()
+                if n.startswith("homeassistant/components/") and n.endswith("/manifest.json")]
+    else:
+        todo = [l.strip() for l in open(path, encoding="utf-8") if l.strip() and not l.startswith("#")]
     seen, reqs = set(), []
     while todo:
         entry = todo.pop()
@@ -84,8 +105,9 @@ def manifest_requirements(ha_version):
         seen.add(entry)
         # "dominio:pacchetto" prende dal manifest solo quel pacchetto, senza le dependencies
         domain, _, only = entry.partition(":")
-        with urllib.request.urlopen(base + domain + "/manifest.json", timeout=30) as r:
-            manifest = json.load(r)
+        manifest = json.loads(wheel.read(f"homeassistant/components/{domain}/manifest.json"))
+        if manifest.get("disabled"):  # integrazioni spente da HA stesso (requisiti rotti)
+            continue
         reqs += [(Requirement(line), "integrazione " + domain) for line in manifest.get("requirements", [])
                  if not only or canonicalize_name(Requirement(line).name) == canonicalize_name(only)]
         if not only:
@@ -96,8 +118,14 @@ def manifest_requirements(ha_version):
 def main():
     sys.stdout.reconfigure(encoding="utf-8", newline=chr(10))
     ha_version = sys.argv[1] if len(sys.argv) > 1 else pypi("homeassistant")["info"]["version"]
+    here = __file__.rsplit("/", 1)[0].rsplit("\\", 1)[0]
+    index_list = sys.argv[2] if len(sys.argv) > 2 else None
     found = {}  # nome -> (versione, classe, richiesto da)
-    queue = [(Requirement(f"homeassistant=={ha_version}"), "-")] + manifest_requirements(ha_version)
+    if index_list:
+        queue = manifest_requirements(ha_version, index_list)
+    else:
+        queue = [(Requirement(f"homeassistant=={ha_version}"), "-")] + manifest_requirements(
+            ha_version, here + "/integrazioni-base.txt")
     pool = ThreadPoolExecutor(16)
     while queue:
         batch, queue = queue, []
@@ -119,9 +147,16 @@ def main():
 
     rows = sorted((k, *v) for k, v in found.items() if k != "homeassistant")
     count = {c: sum(1 for r in rows if r[2] == c) for c in ("puro", "android", "compilare", "sorgente")}
-    print(f"# Dipendenze di Home Assistant {ha_version} su Android\n")
-    print("Generato da `scripts/dipendenze-android.py` (arm64, Python 3.14). "
-          "Dipendenze del core più i requisiti delle integrazioni in `scripts/integrazioni-base.txt`: HA parte con --skip-pip, quindi le altre integrazioni non trovano le loro librerie.\n")
+    if index_list:
+        print(f"# Dipendenze delle integrazioni dell'indice, Home Assistant {ha_version}\n")
+        print(f"Generato da `scripts/dipendenze-android.py {ha_version} {index_list}` (arm64, Python 3.14). "
+              "Queste integrazioni non sono nell'APK: HA scarica le loro librerie con pip quando le aggiungi. "
+              "I pacchetti nativi qui sotto vanno compilati e pubblicati nell'indice dei wheel.\n")
+    else:
+        print(f"# Dipendenze di Home Assistant {ha_version} su Android\n")
+        print("Generato da `scripts/dipendenze-android.py` (arm64, Python 3.14). "
+              "Dipendenze del core più i requisiti delle integrazioni in `scripts/integrazioni-base.txt`: "
+              "sono incluse nell'APK, così HA parte anche senza rete.\n")
     print(f"Totale {len(rows)}: {count['puro']} puri, {count['android']} con wheel Android, "
           f"**{count['compilare']} da compilare**, {count['sorgente']} solo sorgente.\n")
     for cls, title in (("compilare", "Da compilare con cibuildwheel"), ("sorgente", "Solo sorgente (da verificare)"),

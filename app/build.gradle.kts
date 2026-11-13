@@ -12,8 +12,9 @@ android {
         applicationId = "it.handroid"
         minSdk = 24 // minimo richiesto da CPython per Android
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.0.1-m0"
+        // la versione si confronta con il tag dei rilasci su GitHub (Maintenance.newerRelease)
+        versionCode = 2
+        versionName = "0.1.0-m1"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=none" } }
     }
@@ -27,6 +28,8 @@ android {
 
     packaging { jniLibs { useLegacyPackaging = true } }
 
+    buildFeatures { buildConfig = true }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -36,4 +39,5 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
+    testImplementation("junit:junit:4.13.2")
 }

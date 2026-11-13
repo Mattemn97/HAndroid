@@ -1,6 +1,6 @@
 # Dipendenze di Home Assistant 2026.11.1 su Android
 
-Generato da `scripts/dipendenze-android.py` (arm64, Python 3.14). Dipendenze del core più i requisiti delle integrazioni in `scripts/integrazioni-base.txt`: HA parte con --skip-pip, quindi le altre integrazioni non trovano le loro librerie.
+Generato da `scripts/dipendenze-android.py` (arm64, Python 3.14). Dipendenze del core più i requisiti delle integrazioni in `scripts/integrazioni-base.txt`: sono incluse nell'APK, così HA parte anche senza rete.
 
 Totale 121: 92 puri, 1 con wheel Android, **25 da compilare**, 3 solo sorgente.
 

@@ -17,7 +17,7 @@
 ## Decisioni
 
 - **Processo separato `:ha`.** Python non si reinizializza: a fine esecuzione il processo muore e riparte pulito.
-- **`--skip-pip` e niente uv.** uv è un programma che Android non lascia eseguire da una cartella scrivibile. Le integrazioni con requisiti propri restano fuori fino a quando non si decide il punto 2 dei rischi.
+- **`--skip-pip` e niente uv.** uv è un programma che Android non lascia eseguire da una cartella scrivibile. Le integrazioni con requisiti propri restano fuori fino a quando non si decide il punto 2 dei rischi. Superato nella M1: pip al posto di uv (vedi 0002).
 - **Pacchetti rinviati** (`scripts/android-rinviati.txt`): psutil, grpcio e uv restano fuori; pillow è incluso perché HA lo usa già all'avvio.
 - **Configurazione minima** (`frontend`, `config`, `api`). `default_config` richiede bluetooth e zeroconf, che arrivano con la M2.
 - **`validate_os` e `validate_environment` sostituite all'avvio.** Su Android `sys.platform` vale `android`, ma il kernel è Linux; l'APK fa da container al posto del venv.

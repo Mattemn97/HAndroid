@@ -1,0 +1,27 @@
+# Integrazioni non incluse nell'APK ma i cui pacchetti nativi compiliamo per l'indice dei wheel:
+# HA le installa con pip quando le aggiungi, e pip sul telefono non può compilare codice C.
+# Stessa sintassi di integrazioni-base.txt. Dopo una modifica:
+#   python scripts/dipendenze-android.py <versione-ha> scripts/integrazioni-indice.txt > docs/dipendenze-indice.md
+#   DEPS=docs/dipendenze-indice.md scripts/compila-wheel-android.sh
+# configurazione predefinita di HA (dhcp, ssdp, zeroconf, mobile_app per l'app Companion…)
+default_config
+# dispositivi Wi-Fi e LAN più diffusi
+shelly
+tuya
+hue
+esphome
+mqtt
+cast
+sonos
+xiaomi_miio
+yeelight
+tplink
+tasmota
+broadlink
+wled
+upnp
+homekit_controller
+matter
+samsungtv
+webostv
+androidtv_remote

@@ -2,7 +2,7 @@
 
 Questa guida serve a chi vuole compilare l'app, lavorare sul codice o creare add-on. Va tenuta aggiornata a ogni modifica: se un passaggio qui non funziona più, è un bug della guida.
 
-Stato attuale: **M0 (fattibilità) in corso**. Sull'emulatore HA parte e mostra la configurazione iniziale su `:8123`; manca la prova sul Xiaomi 12T. Lo storico dei lavori è in [registro.md](registro.md).
+Stato attuale: **M0 chiusa, M1 (server affidabile) in corso**. HA gira sul Xiaomi 12T, si apre dalla rete di casa e installa le integrazioni con pip. Lo storico dei lavori è in [registro.md](registro.md).
 
 ## Indice
 
@@ -13,7 +13,8 @@ Stato attuale: **M0 (fattibilità) in corso**. Sull'emulatore HA parte e mostra 
 5. [Aggiornare Home Assistant](#aggiornare-home-assistant)
 6. [Lavorare sulle dipendenze native](#lavorare-sulle-dipendenze-native)
 7. [Sviluppare un add-on](#sviluppare-un-add-on)
-8. [Problemi noti](#problemi-noti)
+8. [Server sempre acceso](#server-sempre-acceso)
+9. [Problemi noti](#problemi-noti)
 
 ## Come è fatto il progetto
 
@@ -26,14 +27,21 @@ HAndroid/
 │   └── src/main/
 │       ├── AndroidManifest.xml
 │       ├── java/it/handroid/
-│       │   ├── MainActivity.kt   schermata: avvia HA, mostra l'indirizzo
-│       │   ├── HaService.kt      servizio in primo piano, processo ":ha", estrae Python e avvia HA
+│       │   ├── MainActivity.kt   schermata: stato, avvia/ferma, batteria, backup, aggiornamenti
+│       │   ├── HaService.kt      servizio in primo piano, processo ":ha": estrae Python, avvia HA, watchdog
+│       │   ├── Supervisor.kt     regole di riavvio, crash, avvio automatico (stato in file)
+│       │   ├── BootReceiver.kt   avvio al boot e dopo un aggiornamento
+│       │   ├── AdminReceiver.kt  device owner: regole per un server sempre acceso
+│       │   ├── Maintenance.kt    backup in Download, controllo dei rilasci su GitHub
 │       │   └── PythonRunner.kt   ponte JNI verso libpython
 │       ├── cpp/handroid.c        Py_InitializeFromConfig + Py_RunMain
+│       ├── cpp/hpython.c         eseguibile "python" per pip e add-on (→ jniLibs/libhpython.so)
 │       ├── python/handroid_boot.py  adattamenti di HA ad Android (HA non si modifica)
 │       └── assets/configuration.yaml  configurazione iniziale di HA
 ├── scripts/
-│   ├── dipendenze-android.py     analizza le dipendenze di HA → docs/dipendenze-android.md
+│   ├── dipendenze-android.py     analizza le dipendenze di HA → docs/dipendenze-android.md (e dipendenze-indice.md)
+│   ├── integrazioni-base.txt     integrazioni con le librerie già nell'APK
+│   ├── integrazioni-indice.txt   integrazioni con i pacchetti nativi nell'indice dei wheel
 │   ├── prepara-wsl.sh            prepara Ubuntu/WSL per compilare i wheel
 │   ├── compila-wheel-android.sh  compila i pacchetti nativi per Android → wheels/
 │   ├── prepara-python-android.sh mette Python + HA nell'APK
@@ -44,6 +52,7 @@ HAndroid/
     ├── registro.md               cosa è stato fatto e quando
     ├── progetto-handroid.md      obiettivi, architettura, roadmap
     ├── dipendenze-android.md     generato: pacchetti di HA e stato su Android
+    ├── dipendenze-indice.md      generato: pacchetti delle integrazioni dell'indice
     ├── addon/                    formato e guida degli add-on
     └── specs/                    una specifica per funzione (NNNN-titolo.md)
 ```
@@ -55,8 +64,28 @@ Le cartelle `app/python/`, `app/src/main/jniLibs/`, `app/src/main/assets/python.
 1. `MainActivity` → "Avvia" fa partire `HaService` come servizio in primo piano.
 2. `HaService` gira nel processo separato `:ha`. Al primo avvio dopo ogni installazione estrae `python.zip` in `files/python`. Poi scrive i DNS della rete in `files/dns.txt` e chiama `PythonRunner.runModule`, che passa a Python i percorsi via JNI. `handroid_boot.py` imposta `HOME` e `TMPDIR` partendo da `--config`.
 3. `handroid.c` inizializza CPython con `home = files/python` e avvia il modulo `handroid_boot`.
-4. `handroid_boot` applica gli adattamenti (oggi: salta il controllo del sistema operativo) e chiama il `main()` di Home Assistant con `--config files/ha-config --skip-pip`.
-5. Se HA termina, il processo `:ha` si chiude: Python non si può reinizializzare nello stesso processo.
+4. `handroid_boot` applica gli adattamenti (controllo del sistema operativo, DNS, Bluetooth senza BlueZ, pip al posto di uv, stato per la schermata) e chiama il `main()` di Home Assistant con `--config files/ha-config`.
+5. Se HA termina, il processo `:ha` si chiude: Python non si può reinizializzare nello stesso processo. Il supervisor decide se farlo ripartire (vedi [Server sempre acceso](#server-sempre-acceso)).
+
+### Come si installano le integrazioni
+
+Quando aggiungi un'integrazione, HA chiama `install_package`; `handroid_boot.py` la sostituisce con pip, lanciato come processo figlio con `libhpython.so`. I pacchetti finiscono in `files/ha-config/deps` e sopravvivono agli aggiornamenti dell'APK. pip cerca i wheel prima in `files/python/wheels` (i pacchetti nativi di `docs/dipendenze-indice.md`, inclusi nell'APK), poi nell'indice online e su PyPI. Un pacchetto con codice C che non è in nessuno dei due fa fallire l'installazione: HA mostra una notifica "HAndroid: pacchetto mancante" con il nome, e il log `[handroid]` ha l'errore di pip.
+
+Due livelli di wheel:
+
+- **nell'APK** i pacchetti delle integrazioni più usate (`scripts/integrazioni-indice.txt` → `docs/dipendenze-indice.md`), così funzionano anche senza rete;
+- **online** quelli di tutte le integrazioni di HA (`docs/dipendenze-tutte.md`), pubblicati su GitHub Pages da `scripts/pubblica-indice.sh` (ramo `gh-pages`, un solo commit riscritto ogni volta).
+
+```bash
+python scripts/dipendenze-android.py 2026.11.1 scripts/integrazioni-indice.txt > docs/dipendenze-indice.md
+python scripts/dipendenze-android.py 2026.11.1 tutte > docs/dipendenze-tutte.md
+# in WSL (venv ~/.venv-handroid, ANDROID_HOME=~/android-sdk); salta i wheel già in wheels/, ci vogliono ore la prima volta
+DEPS=docs/dipendenze-tutte.md bash scripts/compila-wheel-android.sh
+bash scripts/prepara-python-android.sh           # APK
+PUBBLICA=1 bash scripts/pubblica-indice.sh       # indice online (push su gh-pages)
+```
+
+Un pacchetto che non si compila va in `scripts/android-rinviati.txt` col motivo; uno che si compila solo con ritocchi ha un caso in `compila-wheel-android.sh` (vedi numpy, psutil, pillow).
 
 L'output di Python va in logcat con i tag `python.stdout` e `python.stderr`; i messaggi dell'app hanno il tag `HAndroid`.
 
@@ -194,7 +223,7 @@ bash scripts/prepara-python-android.sh
 
 ### Integrazioni di base
 
-HA parte con `--skip-pip`, quindi non installa le librerie delle integrazioni. Quelle che servono all'avvio stanno in `scripts/integrazioni-base.txt` (oggi: frontend, conversation, analytics, radio_frequency, infrared, più tts, assist_satellite, met, radio_browser e google_translate, che l'onboarding crea o carica all'ultimo passo: senza, l'interfaccia resta in caricamento su "Aiutaci ad aiutarti"). `dipendenze-android.py` legge il loro `manifest.json` dalla versione di HA e aggiunge i requisiti alla tabella. Per aggiungere un'integrazione: una riga nel file, poi rigenera la tabella e ricompila. Con `dominio:pacchetto` (es. `stream:numpy`) si prende solo quel pacchetto dal manifest, senza le dependencies: serve quando HA importa un'integrazione per un controllo ma non la avvia.
+Le librerie delle integrazioni che HA carica all'avvio sono già nell'APK, così HA parte anche senza rete. Stanno in `scripts/integrazioni-base.txt` (oggi: frontend, conversation, analytics, radio_frequency, infrared, più tts, assist_satellite, met, radio_browser e google_translate, che l'onboarding crea o carica all'ultimo passo: senza, l'interfaccia resta in caricamento su "Aiutaci ad aiutarti"). `dipendenze-android.py` legge il loro `manifest.json` dalla versione di HA e aggiunge i requisiti alla tabella. Per aggiungere un'integrazione: una riga nel file, poi rigenera la tabella e ricompila. Con `dominio:pacchetto` (es. `stream:numpy`) si prende solo quel pacchetto dal manifest, senza le dependencies: serve quando HA importa un'integrazione per un controllo ma non la avvia.
 
 ### Pacchetti rinviati
 
@@ -219,15 +248,57 @@ Se un pacchetto non si compila:
 
 Gli add-on arrivano con la **M3**: il formato è in bozza e può cambiare. La descrizione completa, con il manifest, è in [addon/README.md](addon/README.md).
 
+## Server sempre acceso
+
+Il supervisor (`Supervisor.kt` e il watchdog in `HaService.kt`) tiene HA acceso:
+
+| Evento | Cosa fa |
+| --- | --- |
+| Telefono acceso, app aggiornata | riavvia HA, se l'avvio automatico è attivo |
+| "Riavvia" in HA (uscita 100) | riparte dopo 1 secondo |
+| "Ferma" in HA o nell'app (uscita 0) | resta fermo; l'avvio automatico si spegne finché non premi "Avvia" |
+| Crash, o 3 controlli falliti (uno ogni 30 secondi) | riparte dopo 10 secondi |
+| Processo ucciso di colpo (sistema, crash nativo) | riparte entro 2 minuti: il watchdog sposta avanti una sveglia ogni 30 secondi, e se il processo muore la sveglia scatta. Conta come crash (file `in-corso` rimasto) |
+| 3 crash in 15 minuti | riparte con `--recovery-mode` |
+
+Il supervisor gira nello stesso processo di HA: senza la sveglia di sicurezza un `kill -9` lo lascerebbe fermo, perché MIUI ignora `START_STICKY`. Il watchdog parte quando `stato.txt` dice "Home Assistant pronto"; dopo, `handroid_boot.py` non lo cambia più.
+
+Sul telefono, una volta:
+
+1. Nell'app tocca **Escludi dall'ottimizzazione batteria**: senza, Android può chiudere HA e impedirgli di ripartire.
+2. Su MIUI: Impostazioni → App → HAndroid → **Avvio automatico** attivo e **Risparmio batteria: nessuna restrizione**.
+3. Facoltativo, solo su un telefono **senza account** (Google, Xiaomi): rendi l'app device owner. Toglie la schermata di blocco, concede i permessi da sola e sposta gli aggiornamenti di sistema tra le 2 e le 5.
+
+   ```bash
+   adb shell dpm set-device-owner it.handroid/.AdminReceiver
+   ```
+
+   Per toglierlo serve il ripristino di fabbrica, oppure `adb shell dpm remove-active-admin it.handroid/.AdminReceiver` con un'app di debug.
+
+Backup: li crea HA (Impostazioni → Sistema → Backup, anche automatici). Il pulsante **Copia l'ultimo backup in Download** porta l'ultimo in `Download/HAndroid`, fuori dalla memoria privata dell'app.
+
+Aggiornamenti: l'APK contiene anche Home Assistant. **Cerca aggiornamenti** confronta la versione dell'app (`versionName` in `app/build.gradle.kts`) con l'ultimo rilascio su GitHub e apre il download dell'APK.
+
+Per provare il supervisor sull'emulatore:
+
+```bash
+adb shell run-as it.handroid cat files/stato.txt        # ultimo passo
+adb shell run-as it.handroid cat files/crash.txt        # crash recenti (uno per riga)
+adb shell am broadcast -a android.intent.action.BOOT_COMPLETED -p it.handroid   # finto boot
+adb shell run-as it.handroid kill -9 $(adb shell pidof it.handroid:ha)           # crash: riparte entro 2 minuti
+```
+
+Su MIUI senza SIM `adb shell input` è bloccato: i pulsanti dell'app vanno premuti a mano.
+
 ## Problemi noti
 
 Gradle su Windows, se manca qualcosa:
 - `Dependency requires at least JVM runtime version 11`: Gradle usa Java 8. Aggiungi a `%USERPROFILE%\.gradle\gradle.properties` la riga `org.gradle.java.home=C:/Program Files/Microsoft/jdk-17...` (il tuo JDK 17).
+- APK grande il doppio del previsto (es. 312 MB invece di 152): resti della build incrementale dopo un nuovo `python.zip`. Cancella `app/build/intermediates/apk` e ricompila.
 - `SDK location not found`: crea `local.properties` (fuori da git) con `sdk.dir=C:/Users/<utente>/AppData/Local/Android/Sdk`.
 
 | Problema | Effetto | Stato |
 | --- | --- | --- |
-| `uv` è un eseguibile e Android non esegue binari da cartelle scrivibili | HA non può installare a runtime i requisiti delle integrazioni: si avvia con `--skip-pip` | da decidere (vedi rischi nel progetto) |
 | `sys.platform` vale `android` | HA rifiuterebbe di partire | aggirato in `handroid_boot.py` |
 | `PyConfig.use_system_logger` esiste solo su iOS/macOS | — | su Android il redirect a logcat è automatico |
 | tar di Git Bash non crea symlink prima del loro bersaglio | estrazione di CPython fallisce al primo giro | lo script estrae due volte |

@@ -2,6 +2,23 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-13 · M1: prove sul 12T e indice dei wheel online
+
+**Risultato:** sul Xiaomi 12T HA riparte da solo dopo un `kill -9` (120 s) e dopo il riavvio del telefono (63 s). L'indice dei wheel Android è online su https://mattemn97.github.io/HAndroid/, con la pagina del progetto nello stesso tema di mattemn97.github.io, ed è nell'elenco dei progetti del sito.
+
+**Scoperto e corretto**
+- Un processo `:ha` ucciso di colpo restava fermo: il supervisor muore con lui e MIUI ignora `START_STICKY`. Ora il watchdog tiene una sveglia 2 minuti avanti, e il file `in-corso` conta queste morti come crash.
+- `stato.txt` passava da "Home Assistant pronto" a "update pronto" (integrazioni caricate dopo l'avvio), e il watchdog non partiva. Dopo "pronto" lo stato non cambia più.
+- Aggiungere OpenAI falliva: `pydantic-core` (Rust) non aveva un wheel Android e pip non può compilarlo sul telefono. `dipendenze-android.py ... tutte` calcola i pacchetti di tutte le integrazioni (`docs/dipendenze-tutte.md`: 59 nativi, 130 solo sorgente); si compilano in WSL e si pubblicano con `scripts/pubblica-indice.sh`.
+- Un pacchetto nativo mancante ora appare come notifica in HA ("HAndroid: pacchetto mancante").
+- `compila-wheel-android.sh` segnava come falliti i wheel puri creati da `pip wheel`; psutil si compila trattando Android come Linux.
+- APK di 312 MB dopo un nuovo `python.zip`: resti della build incrementale, si risolve cancellando `app/build/intermediates/apk`.
+
+**Ancora aperto**
+- Da provare a mano sul telefono (MIUI senza SIM blocca `adb shell input`): "Ferma" nell'app e "Riavvia" in HA.
+- Gate della M1: 7 giorni di fila senza interventi.
+- scipy e pandas probabilmente non si compilano (servono BLAS/Fortran); ffmpeg per le telecamere manca.
+
 ## 2026-11-13 · M0: Home Assistant risponde sull'emulatore
 
 **Risultato:** sull'emulatore Android 15 (x86_64 con traduzione arm64) HA 2026.11.1 parte dentro l'APK e serve la pagina di configurazione iniziale su `:8123` (HTTP 200, file dell'interfaccia compresi). Manca la prova sul Xiaomi 12T da un altro telefono, che è il gate vero della M0.

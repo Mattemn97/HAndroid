@@ -9,13 +9,20 @@ Stato al 12 novembre 2026: è stata scelta la strada e gli script sono pronti, m
 ## Contenuto della cartella
 
 ```
-home-assistant-android/
+HAndroid/
 ├── README.md                               ← questo file
+├── app/                                    ← app HAndroid (strada C), in sviluppo
 ├── docs/
-│   └── progetto-handroid.md                ← progetto dell'app "HAndroid" (HA nativo su Android)
+│   ├── guida-sviluppo.md                   ← come compilare, provare e contribuire
+│   ├── registro.md                         ← cosa è stato fatto e quando
+│   ├── progetto-handroid.md                ← progetto dell'app "HAndroid" (HA nativo su Android)
+│   ├── dipendenze-android.md               ← pacchetti di HA e stato su Android (generato)
+│   ├── addon/                              ← formato degli add-on (bozza)
+│   └── specs/                              ← specifiche delle funzioni
 └── scripts/
     ├── prepara-server-xiaomi.sh            ← dal PC via ADB, dopo il reset (strada A)
-    └── installa-homeassistant-android.sh   ← dentro Termux, piano B (strada B)
+    ├── installa-homeassistant-android.sh   ← dentro Termux, piano B (strada B)
+    └── …                                   ← build di HAndroid: vedi la guida allo sviluppo
 ```
 
 ---
@@ -90,7 +97,9 @@ Un'app tutta nostra che fa girare il **vero** Home Assistant dentro l'APK, con P
 - Bluetooth, chiavette Zigbee e sensori del telefono, tramite bridge locali.
 - Add-on scaricabili solo quando servono.
 
-Il progetto completo (architettura, bridge, add-on, roadmap, rischi) è in [`docs/progetto-handroid.md`](docs/progetto-handroid.md). Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).
+Il progetto completo (architettura, bridge, add-on, roadmap, rischi) è in [`docs/progetto-handroid.md`](docs/progetto-handroid.md). Per compilarlo, provarlo o sviluppare add-on parti da [`docs/guida-sviluppo.md`](docs/guida-sviluppo.md).
+
+Stato: milestone M0 in corso. Sull'emulatore Home Assistant parte dentro l'APK e mostra la configurazione iniziale; manca la prova sul Xiaomi 12T. Dettagli nel [registro](docs/registro.md). Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).
 
 ---
 

@@ -1,24 +1,40 @@
-# Nome del progetto
+# HAndroid
 
-<!-- Compila le parti tra parentesi e cancella questi commenti. Un modello completo è in esempi/ del kit. -->
 
 ## Stack
 
-- **Linguaggio**: (es. JavaScript, Node.js)
-- **Framework**: (es. Vue 3)
-- **Dipendenze chiave**: (es. Firebase, Tailwind)
+- **Linguaggio**: Kotlin (app), C (JNI verso libpython), Python 3.14 (Home Assistant)
+- **Framework**: Android SDK 35, NDK/CMake, Gradle con Kotlin DSL
+- **Dipendenze chiave**: CPython ufficiale per Android, Home Assistant Core, cibuildwheel per i wheel Android
 
 ## Comandi
 
+Guida completa: `docs/guida-sviluppo.md`. I wheel si compilano in WSL (Ubuntu 24.04, preparato da `scripts/prepara-wsl.sh`).
+
 ```bash
-# Installazione
-# Avvio in locale
-# Test
-# Build
-# Deploy
+# Dipendenze di HA per Android (rigenera docs/dipendenze-android.md)
+python scripts/dipendenze-android.py > docs/dipendenze-android.md
+# Wheel nativi per Android (Linux/macOS/WSL, con NDK e cibuildwheel)
+scripts/compila-wheel-android.sh
+# Python + HA dentro l'APK
+scripts/prepara-python-android.sh
+# Build e installazione sul telefono
+./gradlew installDebug
+# Log
+adb logcat -s HAndroid python.stdout python.stderr
 ```
 
 ## Regole del progetto
+
+- Home Assistant non si modifica: gli adattamenti ad Android vanno in `app/src/main/python/handroid_boot.py`.
+- Solo arm64 (Xiaomi 12T). `app/python`, `jniLibs`, `python.zip` e `wheels/` sono generati e stanno fuori da git.
+- Ogni modifica aggiorna `docs/guida-sviluppo.md` (se cambia come si compila, prova o sviluppa) e aggiunge una voce a `docs/registro.md`. Il repo deve bastare a chi sviluppa l'app o un add-on.
+- Un cambio al formato degli add-on va in `docs/addon/README.md`, con una riga nello storico in fondo.
+- In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows.
+- `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.
+- Le librerie delle integrazioni caricate all'avvio vanno in `scripts/integrazioni-base.txt`; i pacchetti nativi che non si compilano in `scripts/android-rinviati.txt`, col motivo.
+- Su Windows `sdkmanager.bat` spezza gli argomenti al `;`: passare i pacchetti con `--package_file`.
+- Quando cambia la versione di HA, rigenera `docs/dipendenze-android.md`: gli script di build leggono le versioni da lì.
 
 <!-- Solo quello che non si capisce leggendo il codice. Ogni regola dice cosa fare e cosa si rompe altrimenti.
 Di solito valgono: cosa va aggiornato insieme, dove sta una certa logica, cosa non va toccato, cosa viene controllato da un test.

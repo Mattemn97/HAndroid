@@ -1,1 +1,12 @@
 .agents/
+# build Android
+.gradle/
+build/
+app/build/
+app/.cxx/
+local.properties
+# prodotti da scripts/prepara-python-android.sh e compila-wheel-android.sh
+app/python/
+app/src/main/jniLibs/
+app/src/main/assets/python.zip
+wheels/

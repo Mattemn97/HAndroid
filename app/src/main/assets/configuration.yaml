@@ -1,0 +1,11 @@
+# Configurazione minima della M0: solo ciò che serve per aprire l'interfaccia.
+# default_config tira dentro bluetooth, zeroconf e altro che su Android arriva con la M2.
+homeassistant:
+  name: HAndroid
+
+http:
+  server_port: 8123
+
+frontend:
+config:
+api:

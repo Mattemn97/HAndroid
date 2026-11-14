@@ -154,6 +154,12 @@ class HaService : Service() {
         if (!yaml.exists() || yaml.readText().startsWith("# Configurazione minima della M0")) {
             yaml.writeText(assets.open("configuration.yaml").reader().readText())
         }
+        // la 0.3.0 aveva "homeassistant: name:", che blocca gli URL nell'interfaccia: si toglie
+        val old = yaml.readText()
+        val locked = Regex("(?m)^homeassistant:\\r?\\n  name: HAndroid\\r?\\n(\\r?\\n)?")
+        if (old.startsWith("# Configurazione iniziale di HAndroid") && locked.containsMatchIn(old)) {
+            yaml.writeText(locked.replace(old, ""))
+        }
 
         // le variabili d'ambiente impostate da qui non arrivano a Python: handroid_boot.py ricava HOME,
         // TMPDIR e il file di stato dalla cartella di --config, e legge da dns.txt i DNS della rete

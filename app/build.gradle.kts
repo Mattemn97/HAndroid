@@ -20,8 +20,8 @@ android {
         minSdk = 24 // minimo richiesto da CPython per Android
         targetSdk = 35
         // la versione si confronta con il tag dei rilasci su GitHub (Maintenance.newerRelease)
-        versionCode = 4
-        versionName = "0.3.0-m3"
+        versionCode = 5
+        versionName = "0.3.1"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=none" } }
     }

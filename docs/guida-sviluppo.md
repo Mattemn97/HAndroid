@@ -280,6 +280,10 @@ Tutto parte con HA, nel processo `:ha`:
 
 `configuration.yaml` iniziale (`app/src/main/assets`) è `default_config` senza cloud (grpcio), dhcp (socket raw), stream e go2rtc (FFmpeg): con `default_config` intero HA non caricherebbe nemmeno il resto, perché basta una dipendenza fallita. `HaService` lo riscrive solo se manca o se è ancora quello della M0.
 
+Niente sezione `homeassistant:` nel file: con quella HA blocca nell'interfaccia nome, posizione e URL (Impostazioni → Sistema → Rete). `HaService` la toglie dai file scritti dalla 0.3.0.
+
+**Accesso da remoto.** Nabu Casa non funziona ancora (manca grpcio). La strada più semplice è [Tailscale](https://tailscale.com/download/android): l'app sul telefono server e sul telefono personale, stesso account; poi nell'app Companion l'indirizzo è `http://<IP Tailscale del server>:8123`, da scrivere anche in Impostazioni → Sistema → Rete → URL "Internet". Niente porte aperte sul router.
+
 `handroid_boot.py` rende tollerante un requisito mancante di una *after_dependency* (es. cloud per mobile_app): l'integrazione parte lo stesso, con un avviso nel log.
 
 Prova rapida del dispositivo ESPHome dal PC, con lo stesso client di HA:

@@ -2,6 +2,12 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-14 · 0.3.1: URL modificabili per l'accesso da remoto
+
+**Risultato:** in Impostazioni → Sistema → Rete gli URL di HA erano bloccati ("configurazione salvata in configuration.yaml sotto la chiave homeassistant"). La causa era la sezione `homeassistant: name: HAndroid` del file iniziale: con quella HA rende di sola lettura tutta la configurazione generale. Tolta dal modello; `HaService` la toglie anche dai file esistenti. Sul 12T corretta a mano e verificata (HA riparte in 27 s).
+
+**Da sapere:** il nome del sistema torna quello predefinito ("Home"): si cambia da Impostazioni → Sistema → Generale. Per l'accesso da fuori casa: Tailscale (guida, "Hardware del telefono"), finché il cloud di Nabu Casa non funziona.
+
 ## 2026-11-14 · M2, M3 e M4: hardware, add-on e rilascio pronti
 
 **Risultato:** sul 12T HA scopre i dispositivi in rete (Chromecast, Xbox, il telefono stesso), vede sensori e torcia del telefono come dispositivo ESPHome, e gestisce il primo add-on (broker MQTT) collegato all'integrazione MQTT. L'APK di rilascio firmato si costruisce con `scripts/rilascio.sh`; non è ancora pubblicato.

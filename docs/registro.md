@@ -25,7 +25,7 @@ Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recen
 **Ancora aperto**
 - Proxy Bluetooth: serve il permesso "Dispositivi nelle vicinanze" (MIUI non lo fa dare da adb) e un sensore BLE per provarlo.
 - Ponte USB: nessuna chiavetta Zigbee per la prova.
-- Rilascio su GitHub: pronto, da pubblicare con `PUBBLICA=1 scripts/rilascio.sh` dopo l'ok. L'APK firmato non aggiorna quello di debug installato: va fatto un backup e disinstallato.
+- Rilascio pubblicato: [v0.3.0-m3](https://github.com/Mattemn97/HAndroid/releases/tag/v0.3.0-m3), segnato come ultimo (prima lo era ancora il vecchio v0.1.2). L'APK firmato non aggiorna quello di debug installato: va fatto un backup e disinstallato.
 - Rinviati (motivi in `android-rinviati.txt`): grpcio (cloud), av (telecamere), lxml, scipy, pandas, awscrt, isal, evdev, ijson, faust-cchardet.
 - Utente di prova `handroid-test` creato in HA per le prove dal PC: da togliere (Impostazioni → Persone → Utenti).
 

@@ -3,7 +3,7 @@
 #  rilascio.sh
 #  Prepara un rilascio di HAndroid: APK firmato in build/rilascio/HAndroid-<versione>.apk, con
 #  impronta SHA-256 e note prese dal registro. Con PUBBLICA=1 crea anche il rilascio su GitHub
-#  (tag v<versione>), che "Cerca aggiornamenti" nell'app e installa-handroid.sh trovano da soli.
+#  (tag v<versione>, segnato come ultimo rilascio), che "Cerca aggiornamenti" nell'app e installa-handroid.sh trovano da soli.
 #
 #  Prima: scripts/prepara-python-android.sh (python.zip aggiornato) e keystore.properties nella
 #  radice del repo (fuori da git):
@@ -52,6 +52,7 @@ echo "$APK ($(du -h "$APK" | cut -f1)), SHA-256 $SHA"
 [ -n "${PUBBLICA:-}" ] || { echo "Prova: niente pubblicato (PUBBLICA=1 per il rilascio su GitHub)"; exit 0; }
 git tag -a "$TAG" -m "HAndroid $VERSIONE"
 git push -q origin "$TAG"
-gh release create "$TAG" "$APK" --title "HAndroid $VERSIONE" --notes-file "$NOTE" \
-  $(case "$VERSIONE" in *-*) echo --prerelease ;; esac)
+# sempre "latest": l'app ("Cerca aggiornamenti") e installa-handroid.sh leggono /releases/latest,
+# che salta le pre-release
+gh release create "$TAG" "$APK" --title "HAndroid $VERSIONE" --notes-file "$NOTE" --latest
 echo "Pubblicato: https://github.com/Mattemn97/HAndroid/releases/tag/$TAG"

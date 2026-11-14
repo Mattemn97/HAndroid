@@ -1,6 +1,6 @@
 # 0007 · Rilascio (M4)
 
-13 novembre 2026. Stato: pronto, primo rilascio da pubblicare.
+13 novembre 2026. Stato: primo rilascio pubblicato il 14 novembre, [v0.3.0-m3](https://github.com/Mattemn97/HAndroid/releases/tag/v0.3.0-m3).
 
 ## Requisiti
 
@@ -12,7 +12,7 @@
 
 1. `scripts/prepara-python-android.sh` (WSL) per `python.zip`.
 2. `versionName` e `versionCode` in `app/build.gradle.kts`, voce nel registro, commit.
-3. `scripts/rilascio.sh`: test, APK firmato in `build/rilascio/`, SHA-256, note dalla voce più recente del registro. Con `PUBBLICA=1` crea il tag `v<versione>` e il rilascio su GitHub (pre-release se la versione ha un suffisso, es. `0.3.0-m3`).
+3. `scripts/rilascio.sh`: test, APK firmato in `build/rilascio/`, SHA-256, note dalla voce più recente del registro. Con `PUBBLICA=1` crea il tag `v<versione>` e il rilascio su GitHub, segnato come ultimo.
 4. `PUBBLICA=1 scripts/pubblica-indice.sh` se sono cambiati wheel, add-on o pagina.
 
 ## Sicurezza
@@ -26,4 +26,4 @@
 |---|---|---|---|
 | R1 | **Rilascio costruito sul PC, non in CI.** | `python.zip` richiede i wheel compilati in WSL con cibuildwheel (ore la prima volta) e la CI di GitHub dovrebbe rifare tutto a ogni rilascio. | Lo script controlla che non ci siano modifiche non salvate e che il tag non esista. |
 | R2 | **Niente F-Droid ufficiale per ora.** | F-Droid compila dal sorgente sui suoi server e non accetta binari già pronti: qui dentro ci sono CPython, 140 MB di pacchetti Python e wheel nativi. Andrebbe ricostruito tutto nella loro ricetta. | Distribuzione da GitHub Releases, aggiornabile con l'app stessa o con Obtainium. IzzyOnDroid (accetta APK già firmati) è il passo successivo, dopo qualche rilascio stabile. |
-| R3 | **Versioni `0.x.0-mN` fino alla M4 compresa.** | Sono pre-release: funzionano, ma il gate dei 7 giorni non è ancora passato. | `1.0.0` quando il 12T regge una settimana senza interventi. |
+| R3 | **Versioni `0.x.0-mN` fino alla M4 compresa, pubblicate come rilascio normale.** | L'app e l'installer leggono `/releases/latest`, che salta le pre-release; il suffisso dice già che è una versione di prova. | `1.0.0` quando il 12T regge una settimana senza interventi. Il vecchio `v0.1.2` della sessione notturna (app scheletro) resta su GitHub, non più come ultimo. |

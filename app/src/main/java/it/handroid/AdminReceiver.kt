@@ -33,10 +33,9 @@ class AdminReceiver : DeviceAdminReceiver() {
             val dpm = context.getSystemService(DevicePolicyManager::class.java)
             val admin = component(context)
             // permessi concessi senza chiedere
-            if (Build.VERSION.SDK_INT >= 33) {
+            for (permission in MainActivity.runtimePermissions()) {
                 dpm.setPermissionGrantState(
-                    admin, context.packageName, Manifest.permission.POST_NOTIFICATIONS,
-                    DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED,
+                    admin, context.packageName, permission, DevicePolicyManager.PERMISSION_GRANT_STATE_GRANTED,
                 )
             }
             // aggiornamenti di sistema solo di notte (2:00-5:00), così il server non si riavvia di giorno

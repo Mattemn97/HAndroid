@@ -14,6 +14,7 @@ import bluetooth_adapters.systems
 
 import homeassistant.__main__ as ha_main
 import homeassistant.core as ha_core
+import homeassistant.requirements as ha_requirements
 import homeassistant.util.package as ha_package
 
 # HA accetta solo sys.platform "linux" o "darwin"; su Android vale "android", ma il kernel è Linux.
@@ -27,7 +28,6 @@ _FILES = os.path.dirname(os.path.abspath(sys.argv[sys.argv.index("--config") + 1
 os.environ.setdefault("HOME", _FILES)
 os.environ.setdefault("TMPDIR", os.path.join(os.path.dirname(_FILES), "cache"))
 _STATO = os.path.join(_FILES, "stato.txt")
-
 
 def _read(name):
     try:
@@ -102,8 +102,9 @@ def _install_package(package, upgrade=True, target=None, constraints=None, timeo
         # lo si dice chiaro, nell'interfaccia di HA, invece del solo "requisiti non trovati"
         if missing := sorted(set(re.findall(r"Failed to build '([^']+)'", result.stderr))):
             _avvisa(f"Il pacchetto {package} non si installa su Android: manca la versione per Android di "
-                    f"{', '.join(missing)}. Va aggiunta all'indice dei wheel di HAndroid "
-                    "(vedi docs/guida-sviluppo.md, \"Come si installano le integrazioni\").")
+                    f"{', '.join(missing)}, quindi questa integrazione per ora non funziona. "
+                    "Segnalalo su https://github.com/Mattemn97/HAndroid/issues: va compilata e "
+                    "aggiunta all'indice https://mattemn97.github.io/HAndroid/")
         return False
     return True
 
@@ -129,6 +130,23 @@ def _ricorda_hass(self, *args, **kwargs):
 ha_core.HomeAssistant.__init__ = _ricorda_hass
 _LOGGER = logging.getLogger("handroid")
 ha_package.install_package = _install_package
+
+# HA installa anche i requisiti delle after_dependencies e, se falliscono, non carica l'integrazione.
+# Su Android alcune mancano (cloud vuole grpcio): mobile_app, che carica cloud "dopo" se c'è, non
+# partirebbe più. Qui un requisito mancante di una after_dependency diventa solo un avviso.
+_processa = ha_requirements.RequirementsManager._async_process_integration
+
+
+async def _processa_tollerante(self, integration, done):
+    try:
+        await _processa(self, integration, done)
+    except ha_requirements.RequirementsNotFound as ex:
+        if ex.domain in integration.dependencies or ex.domain not in integration.after_dependencies:
+            raise
+        _LOGGER.warning("%s parte senza %s: %s", integration.domain, ex.domain, ex)
+
+
+ha_requirements.RequirementsManager._async_process_integration = _processa_tollerante
 
 
 class _NessunAdattatore(bluetooth_adapters.BluetoothAdapters):

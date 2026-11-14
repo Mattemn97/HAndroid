@@ -29,9 +29,12 @@ class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AdminReceiver.applyPolicies(this)
-        if (Build.VERSION.SDK_INT >= 33) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 0)
+        // notifiche e Bluetooth (proxy BLE della M2): senza, HA funziona lo stesso ma senza sensori BLE
+        requestPermissions(runtimePermissions(), 0)
         // per i test senza toccare lo schermo: adb shell am start -n it.handroid/.MainActivity --ez avvia true
-        if (intent.getBooleanExtra("avvia", false)) HaService.start(this)
+        // ...e se l'avvio automatico è attivo: MIUI a volte non consegna MY_PACKAGE_REPLACED dopo un
+        // aggiornamento. Con HA già in funzione il servizio ignora la richiesta.
+        if (intent.getBooleanExtra("avvia", false) || Supervisor.autostart(this)) HaService.start(this)
 
         status = TextView(this).apply { textSize = 16f; setPadding(0, 0, 0, 32) }
         info = TextView(this).apply { textSize = 14f; setPadding(0, 32, 0, 0) }
@@ -131,5 +134,18 @@ class MainActivity : Activity() {
         val cm = getSystemService(ConnectivityManager::class.java)
         val props = cm.getLinkProperties(cm.activeNetwork) ?: return null
         return props.linkAddresses.map { it.address }.firstOrNull { it is Inet4Address }?.hostAddress
+    }
+
+    companion object {
+        /** Permessi chiesti all'utente (o concessi da soli se l'app è device owner). */
+        fun runtimePermissions(): Array<String> = buildList {
+            if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)
+            if (Build.VERSION.SDK_INT >= 31) {
+                add(Manifest.permission.BLUETOOTH_SCAN)
+                add(Manifest.permission.BLUETOOTH_CONNECT)
+            } else {
+                add(Manifest.permission.ACCESS_FINE_LOCATION)  // prima di Android 12 la scansione BLE la richiede
+            }
+        }.toTypedArray()
     }
 }

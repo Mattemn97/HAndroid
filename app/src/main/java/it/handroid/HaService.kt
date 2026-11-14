@@ -49,9 +49,13 @@ class HaService : Service() {
             if (Supervisor.markRunning(this)) Supervisor.recordCrash(this)
             Supervisor.scheduleSafetyNet(this)
             setStatus(this, "Avvio del servizio…")  // cancella lo stato del giro precedente
+            // hardware del telefono per HA (M2): dispositivo ESPHome con proxy Bluetooth, ponte USB
+            it.handroid.esphome.EspHome.avvia(this)
+            UsbPonte.avvia(this)
             thread(name = "hass") { runAndSupervise() }
             thread(name = "watchdog", isDaemon = true) { watchdog() }
         }
+        if (intent?.getBooleanExtra(RECHECK_USB, false) == true) UsbPonte.ricontrolla(this)
         return START_STICKY
     }
 
@@ -144,7 +148,10 @@ class HaService : Service() {
         val home = extractPython()
         val config = File(filesDir, "ha-config").apply { mkdirs() }
         val yaml = File(config, "configuration.yaml")
-        if (!yaml.exists()) yaml.writeText(assets.open("configuration.yaml").reader().readText())
+        // si scrive se manca, o se è ancora quella minima della M0 (senza scoperta dei dispositivi)
+        if (!yaml.exists() || yaml.readText().startsWith("# Configurazione minima della M0")) {
+            yaml.writeText(assets.open("configuration.yaml").reader().readText())
+        }
 
         // le variabili d'ambiente impostate da qui non arrivano a Python: handroid_boot.py ricava HOME,
         // TMPDIR e il file di stato dalla cartella di --config, e legge da dns.txt i DNS della rete
@@ -222,6 +229,7 @@ class HaService : Service() {
         private const val TAG = "HAndroid"
         private const val CHANNEL = "server"
         private const val ACTION_STOP = "it.handroid.STOP"
+        private const val RECHECK_USB = "ricontrolla_usb"
 
         /** Testo che handroid_boot.py scrive quando HA ha finito di avviarsi. */
         const val READY = "Home Assistant pronto"
@@ -242,8 +250,9 @@ class HaService : Service() {
 
         fun setStatus(context: Context, text: String) = statusFile(context).writeText(text)
 
-        fun start(context: Context) {
-            val intent = Intent(context, HaService::class.java)
+        /** [recheckUsb]: una chiavetta è appena stata collegata (da [UsbAttivita]). */
+        fun start(context: Context, recheckUsb: Boolean = false) {
+            val intent = Intent(context, HaService::class.java).putExtra(RECHECK_USB, recheckUsb)
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
         }
 

@@ -1,0 +1,36 @@
+install: &slug
+  fields:
+    slug:
+      required: true
+      example: mqtt
+      selector:
+        text:
+start: *slug
+stop: *slug
+uninstall: *slug
+set_options:
+  fields:
+    slug:
+      required: true
+      example: mqtt
+      selector:
+        text:
+    options:
+      required: true
+      example: '{"port": 1883, "allow_anonymous": false}'
+      selector:
+        object:
+    boot_auto:
+      selector:
+        boolean:
+repository:
+  fields:
+    url:
+      required: true
+      example: https://raw.githubusercontent.com/utente/repo/master/addons
+      selector:
+        text:
+    remove:
+      selector:
+        boolean:
+refresh:

@@ -14,7 +14,7 @@ L'app deve garantire:
 - Add-on scaricati solo quando servono e rimossi quando non servono più.
 - Server attivo 24/7, anche dopo un riavvio, senza toccare il telefono.
 
-Telefono di riferimento: Xiaomi 12T (Dimensity 8100, 8 GB di RAM, HyperOS 2 su Android 15).
+Telefono di riferimento: Xiaomi 12T (Dimensity 8100, 8 GB di RAM, Android 14 con MIUI dopo il ripristino di fabbrica del 2026-11-13).
 
 ## Perché le soluzioni attuali sono limitate
 

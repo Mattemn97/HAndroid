@@ -1,0 +1,14 @@
+# Pacchetti nativi che per ora NON vanno nell'APK né nell'indice dei wheel.
+# Home Assistant parte lo stesso; le integrazioni che li usano non si caricano.
+# Formato: nome  motivo. Togli la riga quando il pacchetto si compila.
+uv       è un eseguibile, non una libreria; handroid_boot.py lo sostituisce con pip
+grpcio   la copia interna di c-ares non trova ares_config.h su Android; serve solo all'integrazione Cloud (hass-nabucasa)
+av  usa le librerie di FFmpeg, da compilare a parte per Android (telecamere e stream)
+lxml  richiede libxml2 e libxslt per Android
+scipy  serve un compilatore Fortran per Android; lo usano poche integrazioni (es. reverse-geocode, iqvia)
+isal  rifiuta la piattaforma android; è solo un'accelerazione di zlib, HA ne fa a meno
+evdev  gli header del kernel dell'NDK sono più vecchi (KEY_LINK_PHONE); serve a keyboard_remote, inutile su Android
+ijson  il build scarica e compila yajl con uno script Linux; serve solo ad azure_data_explorer
+faust-cchardet  lo sdist richiede i sottomoduli git; serve solo a touchline_sl
+awscrt  si collega alla sua AWS-LC ma trova gli header OpenSSL di CPython (simboli mancanti); serve solo ad awsiotsdk
+pandas  in compilazione chiede la numpy più recente per Android (2.5.x), ma c'è solo la 2.3.2 fissata da HA; serve solo a noaa-coops

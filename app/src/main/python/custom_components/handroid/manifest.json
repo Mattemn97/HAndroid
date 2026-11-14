@@ -1,0 +1,11 @@
+{
+  "domain": "handroid",
+  "name": "HAndroid",
+  "codeowners": ["@Mattemn97"],
+  "config_flow": true,
+  "documentation": "https://github.com/Mattemn97/HAndroid/blob/master/docs/specs/0007-addon.md",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "0.1.0"
+}

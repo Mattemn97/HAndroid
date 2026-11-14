@@ -1,0 +1,21 @@
+# Broker MQTT in puro Python: basta per l'integrazione MQTT di HA e per i dispositivi di casa.
+name: Broker MQTT
+version: 0.1.0
+type: python          # python | native
+description: Broker MQTT 3.1.1 leggero, senza dipendenze, sulla porta 1883.
+ports: [1883]
+permissions: [network]
+boot: auto
+pip: []               # requisiti pip (solo wheel), installati in una cartella dell'add-on
+files: [broker.py]
+entry: broker.py
+options:
+  port: 1883
+  allow_anonymous: true
+  username: ""
+  password: ""
+schema:
+  port: port
+  allow_anonymous: bool
+  username: str?
+  password: password?

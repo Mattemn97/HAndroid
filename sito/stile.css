@@ -1,0 +1,29 @@
+/* Stile della pagina di HAndroid, sopra mf-theme.css (condiviso con https://mattemn97.github.io) */
+.azioni { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.1rem; }
+.schede { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin-bottom: 1.2rem; }
+.schede h2 { font-size: 1.05rem; margin-bottom: .4rem; }
+.schede h2 i { color: var(--primary); margin-right: .3rem; }
+.schede p { margin: 0; }
+.tappe, #indice { margin-bottom: 1.2rem; }
+
+.elenco-tappe { list-style: none; margin: 0; padding: 0; display: grid; gap: .7rem; }
+.elenco-tappe li { display: grid; grid-template-columns: auto 1fr auto; gap: .8rem; align-items: center; }
+.elenco-tappe li div { display: flex; flex-direction: column; }
+.elenco-tappe li:not(.fatto):not(.corso) { opacity: .65; }
+.elenco-tappe li:not(.fatto):not(.corso) .mf-step { background: var(--bg-2); color: var(--muted); }
+.elenco-tappe .fatto .mf-pill { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.elenco-tappe .corso .mf-pill { background: color-mix(in srgb, var(--warn) 18%, transparent); color: var(--warn); }
+
+#indice .mf-search { margin: .9rem 0; }
+#indice .mf-table-wrap { max-height: 60vh; }
+#indice td:first-child a { font-weight: 600; }
+.tipo-android { color: var(--ok); }
+.tipo-puro { color: var(--muted); }
+
+/* telefono: niente scorrimento orizzontale */
+.mf-eyebrow, #urlIndice { overflow-wrap: anywhere; white-space: normal; }
+.mf-hero h1 { overflow-wrap: break-word; }
+.mf-card { min-width: 0; }
+@media (max-width: 560px) {
+  #indice th:nth-child(4), #indice td:nth-child(4) { display: none; }
+}

@@ -1,0 +1,29 @@
+# Configurazione iniziale di HAndroid: è default_config senza le parti che su Android non partono
+# ancora (cloud: grpcio; dhcp: socket raw, serve root; stream e go2rtc: FFmpeg e il suo eseguibile). Puoi modificarla:
+# HAndroid la scrive solo se manca (o se è ancora quella della M0).
+homeassistant:
+  name: HAndroid
+
+http:
+  server_port: 8123
+
+assist_pipeline:
+backup:
+bluetooth:
+config:
+conversation:
+energy:
+file:
+frontend:
+history:
+homeassistant_alerts:
+logbook:
+media_source:
+mobile_app:
+my:
+ssdp:
+sun:
+usage_prediction:
+usb:
+webhook:
+zeroconf:

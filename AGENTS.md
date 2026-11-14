@@ -1,33 +1,52 @@
 # HAndroid
 
-App Android che fa girare Home Assistant Core vero dentro l'APK, senza root. Decisioni fissate in [docs/specs/0001-architettura.md](docs/specs/0001-architettura.md), visione completa in [docs/progetto-handroid.md](docs/progetto-handroid.md).
 
 ## Stack
 
-- **Linguaggio**: Kotlin (app), C (launcher JNI), Python 3.14 (avvio di HA)
-- **Framework**: Android SDK puro, senza AndroidX; minSdk 29, targetSdk 35, solo arm64-v8a
-- **Dipendenze chiave**: CPython ufficiale per Android (python.org), Home Assistant Core
+- **Linguaggio**: Kotlin (app), C (JNI verso libpython), Python 3.14 (Home Assistant)
+- **Framework**: Android SDK 35, NDK/CMake, Gradle con Kotlin DSL
+- **Dipendenze chiave**: CPython ufficiale per Android, Home Assistant Core, cibuildwheel per i wheel Android
 
 ## Comandi
 
+Guida completa: `docs/guida-sviluppo.md`. I wheel si compilano in WSL (Ubuntu 24.04, preparato da `scripts/prepara-wsl.sh`).
+
 ```bash
-# Prepara Python (scarica CPython per Android, popola jniLibs e assets) — serve prima di ogni build
-bash scripts/prepara-python.sh
-# Build (JDK 17, Android SDK + NDK, Gradle 8.10)
-gradle :app:assembleRelease
-# Installa sul telefono collegato via ADB (ultima release, o un APK locale)
-bash scripts/installa-handroid.sh [file.apk] [--device-owner]
-# Release: automatica a ogni push su master che tocca l'app (.github/workflows/release.yml)
+# Dipendenze di HA per Android (rigenera docs/dipendenze-android.md)
+python scripts/dipendenze-android.py > docs/dipendenze-android.md
+# Wheel nativi per Android (Linux/macOS/WSL, con NDK e cibuildwheel)
+scripts/compila-wheel-android.sh
+# Python + HA dentro l'APK
+scripts/prepara-python-android.sh
+# Build e installazione sul telefono
+./gradlew installDebug
+# Test
+./gradlew testDebugUnitTest
+# Log
+adb logcat -s HAndroid python.stdout python.stderr
 ```
 
 ## Regole del progetto
 
-- La versione di Python sta in due posti: `PYTHON_VERSION` in `.github/workflows/release.yml` e il default in `scripts/prepara-python.sh`. Vanno cambiati insieme, e anche `python3.14` in `CMakeLists.txt` e `PythonRuntime.kt` se cambia la minore.
-- Mai lanciare eseguibili dalla cartella dati: Android li blocca. Un binario nuovo va in `jniLibs` come `lib<nome>.so`.
-- Home Assistant non si patcha: gli adattamenti vanno in `app/src/main/python/handroid_main.py` o nei bridge Kotlin.
-- Il keystore di release vive solo nei secret della repo e nella copia di backup dell'utente: se si perde, le nuove release non si installano sopra le vecchie.
-- `jniLibs/` e `assets/python.zip` sono generati: non si committano.
-- Un commit su master con `[skip release]` nel messaggio non pubblica l'APK.
+- Home Assistant non si modifica: gli adattamenti ad Android vanno in `app/src/main/python/handroid_boot.py`.
+- Solo arm64 (Xiaomi 12T). `app/python`, `jniLibs`, `python.zip` e `wheels/` sono generati e stanno fuori da git.
+- Ogni modifica aggiorna `docs/guida-sviluppo.md` (se cambia come si compila, prova o sviluppa) e aggiunge una voce a `docs/registro.md`. Il repo deve bastare a chi sviluppa l'app o un add-on.
+- Un cambio al formato degli add-on va in `docs/addon/README.md`, con una riga nello storico in fondo.
+- In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows.
+- `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.
+- Le integrazioni installate a runtime con pacchetti nativi vanno in `scripts/integrazioni-indice.txt` (tabella `docs/dipendenze-indice.md`).
+- La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages` con un commit normale (niente push forzati).
+- Le versioni dei wheel seguono `package_constraints.txt` di HA (lo applica `dipendenze-android.py`): un wheel con un'altra versione per pip sul telefono non esiste.
+- Sul 12T senza SIM: installa con `adb push` in `/data/local/tmp` + `pm install -r`; `input` e `pm grant` sono bloccati.
+- Non modificare uno script bash mentre gira in background: bash lo legge a pezzi e si rompe. Lancia una copia.
+- Stato condiviso tra il processo dell'app e `:ha`: file in `files/`, non SharedPreferences.
+- Le librerie delle integrazioni caricate all'avvio vanno in `scripts/integrazioni-base.txt`; i pacchetti nativi che non si compilano in `scripts/android-rinviati.txt`, col motivo.
+- Su Windows `sdkmanager.bat` spezza gli argomenti al `;`: passare i pacchetti con `--package_file`.
+- Quando cambia la versione di HA, rigenera `docs/dipendenze-android.md`: gli script di build leggono le versioni da lì.
+
+<!-- Solo quello che non si capisce leggendo il codice. Ogni regola dice cosa fare e cosa si rompe altrimenti.
+Di solito valgono: cosa va aggiornato insieme, dove sta una certa logica, cosa non va toccato, cosa viene controllato da un test.
+Esempio: "Un campo nuovo del profilo va aggiunto anche alle regole del database, altrimenti il salvataggio viene rifiutato." -->
 
 ## Specifiche
 

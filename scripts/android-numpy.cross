@@ -1,0 +1,4 @@
+# Proprietà per meson che numpy non riesce a ricavare in cross (non può eseguire programmi arm64).
+# Usato da compila-wheel-android.sh insieme al file cross che genera cibuildwheel.
+[properties]
+longdouble_format = 'IEEE_QUAD_LE'

@@ -1,0 +1,19 @@
+# Integrazioni le cui librerie vanno già nell'APK (HA parte con --skip-pip e non le può installare).
+# dipendenze-android.py legge il manifest.json di ognuna (e delle sue dependencies) per la versione di HA.
+# Una per riga; "dominio:pacchetto" prende solo quel pacchetto (senza le dependencies).
+# Una per riga; dopo una modifica rigenera docs/dipendenze-android.md.
+frontend
+conversation
+analytics
+radio_frequency
+infrared
+tts
+assist_satellite
+met
+radio_browser
+google_translate
+# camera la carica il controllo dei servizi (con stream, che importa numpy); av non serve all'avvio
+stream:numpy
+camera
+# analytics importa hassio (aiohasupervisor) anche senza Supervisor
+hassio:aiohasupervisor

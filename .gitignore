@@ -1,14 +1,17 @@
 .agents/
-.claude/worktrees/
+# build Android
 .gradle/
 build/
 app/build/
 app/.cxx/
+local.properties
+# firma dei rilasci (scripts/rilascio.sh)
+keystore.properties
+*.jks
+# prodotti da scripts/prepara-python-android.sh e compila-wheel-android.sh
+app/python/
 app/src/main/jniLibs/
 app/src/main/assets/python.zip
-local.properties
-*.jks
-*.keystore
-*.apk
-.idea/
-*.iml
+wheels/
+# bytecode Python
+__pycache__/

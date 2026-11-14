@@ -67,6 +67,10 @@ ln -sf "$SYSROOT/lib/aarch64-linux-android/24/libz.so" "$DEPS/lib/"
 # cibuildwheel riscrive LDFLAGS e clang ignora LIBRARY_PATH in cross: le librerie statiche vanno
 # nella cartella dell'NDK dove il linker cerca sempre (header via CPATH, vedi compila-wheel-android.sh)
 SYSLIB="$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib/aarch64-linux-android/24"
+# librt e libpthread su Android stanno dentro libc: archivi vuoti per chi le chiede (awscrt, miniaudio)
+for l in rt pthread; do
+  [ -f "$DEPS/lib/lib$l.a" ] || "$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" rc "$DEPS/lib/lib$l.a"
+done
 cp "$DEPS"/lib/*.a "$SYSLIB/"
 
 echo "==> Python 3.14 e cibuildwheel"

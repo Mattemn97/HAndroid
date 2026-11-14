@@ -60,6 +60,17 @@ for req in $list; do
   if ! pip download --no-binary "${req%%==*}" --no-deps -d build/sdist "$req" >"$log" 2>&1; then
     ko+=("$req"); continue
   fi
+  # sdist in .zip (vecchi pacchetti puri): cibuildwheel non li apre, pip sì
+  if compgen -G "build/sdist/*.zip" >/dev/null; then
+    if pip wheel --no-deps --no-binary "$name" -w wheels "$req" >>"$log" 2>&1; then puri+=("$req"); else ko+=("$req"); fi
+    continue
+  fi
+  # "cpython-freethreading" nell'enable del pyproject (numpy, pandas...): cibuildwheel non conosce più quel
+  # gruppo e CIBW_ENABLE non lo scavalca, quindi si toglie la riga dallo sdist
+  (cd build/sdist && f=$(ls *.tar.gz) && d=$(tar tzf "$f" | sed -n 1p | cut -d/ -f1) && tar xzf "$f" \
+    && if grep -qs '^enable = \["cpython-freethreading"' "$d/pyproject.toml"; then
+         sed -i '/^enable = \["cpython-freethreading"/d' "$d/pyproject.toml" && rm "$f" && tar czf "$f" "$d"; fi
+    rm -rf "$d")
   # impostazioni per singolo pacchetto
   extra=()
   case "${req%%==*}" in
@@ -67,17 +78,15 @@ for req in $list; do
     # platform-guessing=disable evita che aggiunga gli header di Linux (/usr/include); zlib arriva da ZLIB_ROOT
     pillow) extra=(CIBW_BEFORE_ALL_ANDROID="" CIBW_CONFIG_SETTINGS_ANDROID="jpeg=disable platform-guessing=disable"
                    CIBW_ENVIRONMENT_ANDROID="$CIBW_ENVIRONMENT_ANDROID ZLIB_ROOT=$ANDROID_DEPS") ;;
-    # numpy: il suo pyproject abilita "cpython-freethreading", gruppo che cibuildwheel non conosce più e
-    # che CIBW_ENABLE non scavalca: si toglie la riga dallo sdist
     # psutil: Android è un Linux, ma psutil guarda sys.platform == "linux" e si rifiuta di compilare
     psutil) (cd build/sdist && f=$(ls psutil-*.tar.gz) && d=${f%.tar.gz} && tar xzf "$f" && rm "$f" \
              && sed -i 's/^LINUX = sys.platform.startswith("linux")/LINUX = sys.platform.startswith(("linux", "android"))/' "$d/psutil/_common.py" \
              && grep -q '"android"' "$d/psutil/_common.py" && tar czf "$f" "$d" && rm -rf "$d")
            extra=(CIBW_TEST_SKIP="*") ;;
-    numpy) (cd build/sdist && f=$(ls numpy-*.tar.gz) && d=${f%.tar.gz} && tar xzf "$f" && rm "$f" \
-             && sed -i '/^enable = \["cpython-freethreading"/d' "$d/pyproject.toml" && tar czf "$f" "$d" && rm -rf "$d")
-           # senza OpenBLAS (non c'è per Android; a HA basta numpy di base), come per Pyodide; niente test sul telefono
-           extra=(CIBW_BEFORE_BUILD_ANDROID="" CIBW_TEST_SKIP="*"
+    # pandas: come numpy, niente test sul telefono
+    pandas) extra=(CIBW_BEFORE_BUILD_ANDROID="" CIBW_TEST_SKIP="*") ;;
+    # numpy: senza OpenBLAS (non c'è per Android; a HA basta numpy di base), come per Pyodide; niente test sul telefono
+    numpy) extra=(CIBW_BEFORE_BUILD_ANDROID="" CIBW_TEST_SKIP="*"
                   CIBW_CONFIG_SETTINGS_ANDROID="build-dir=build setup-args=-Dblas=none setup-args=-Dlapack=none setup-args=-Dallow-noblas=true setup-args=--cross-file=$PWD/scripts/android-numpy.cross") ;;
   esac
   if env "${extra[@]}" bash -c "$(declare -f build); build '$log'"; then

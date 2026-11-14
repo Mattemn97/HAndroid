@@ -12,13 +12,13 @@ Totale 121: 92 puri, 1 con wheel Android, **25 da compilare**, 3 solo sorgente.
 | audioop-lts | 0.2.2 | homeassistant |
 | bcrypt | 5.0.0 | homeassistant |
 | bluetooth-data-tools | 1.29.24 | habluetooth |
-| cffi | 2.1.1 | cryptography |
+| cffi | 2.0.0 | cryptography |
 | ciso8601 | 2.3.3 | homeassistant |
 | cryptography | 50.0.2 | homeassistant |
 | fnv-hash-fast | 2.0.3 | homeassistant |
 | gazetteer-matcher | 1.1.0 | integrazione conversation |
 | greenlet | 3.5.6 | sqlalchemy |
-| grpcio | 1.85.1 | hass-nabucasa |
+| grpcio | 1.83.1 | hass-nabucasa |
 | habluetooth | 7.1.2 | home-assistant-bluetooth |
 | lru-dict | 1.4.1 | homeassistant |
 | numpy | 2.3.2 | integrazione stream |
@@ -64,23 +64,23 @@ Totale 121: 92 puri, 1 con wheel Android, **25 da compilare**, 3 solo sorgente.
 | aiooui | 0.1.11 | bluetooth-adapters |
 | aiosignal | 1.4.0 | aiohttp |
 | aiozoneinfo | 0.2.3 | homeassistant |
-| anyio | 4.16.0 | httpx2 |
+| anyio | 4.15.1 | httpx2 |
 | astral | 2.2 | homeassistant |
 | async-interrupt | 1.2.2 | homeassistant |
-| async-timeout | 5.0.1 | pymetno |
+| async-timeout | 4.0.3 | pymetno |
 | atomicwrites-homeassistant | 1.4.1 | homeassistant |
 | attrs | 26.1.0 | homeassistant |
 | awesomeversion | 25.8.0 | homeassistant |
 | backoff | 2.2.1 | aiogithubapi |
-| bleak | 3.1.0 | habluetooth |
+| bleak | 3.0.2 | habluetooth |
 | bleak-retry-connector | 4.7.1 | habluetooth |
 | bluetooth-adapters | 2.4.0 | habluetooth |
 | bluetooth-auto-recovery | 1.6.4 | habluetooth |
-| boto3 | 1.44.2 | pycognito |
-| botocore | 1.44.2 | boto3 |
+| boto3 | 1.42.97 | pycognito |
+| botocore | 1.42.97 | boto3 |
 | btsocket | 0.3.0 | habluetooth |
 | certifi | 2026.10.23 | homeassistant |
-| charset-normalizer | 3.5.2 | requests |
+| charset-normalizer | 3.4.3 | requests |
 | click | 8.1.8 | gtts |
 | cronsim | 2.7 | homeassistant |
 | envs | 1.4 | pycognito |
@@ -123,7 +123,7 @@ Totale 121: 92 puri, 1 con wheel Android, **25 da compilare**, 3 solo sorgente.
 | radios | 2.0.1 | integrazione radio_browser |
 | requests | 2.34.2 | homeassistant |
 | rf-protocols | 4.3.0 | integrazione radio_frequency |
-| s3transfer | 0.19.3 | boto3 |
+| s3transfer | 0.16.1 | boto3 |
 | securetar | 2026.10.0 | homeassistant |
 | sentence-stream | 1.4.0 | hass-nabucasa |
 | six | 1.17.0 | python-dateutil |

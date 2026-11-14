@@ -6,11 +6,11 @@
 #  (handroid_boot.py lo passa a pip con --find-links). wheels/index.html è la pagina semplice che
 #  legge pip; wheels/indice.json alimenta la tabella della pagina del progetto.
 #
-#  Il ramo gh-pages ha un solo commit, riscritto a ogni pubblicazione: i wheel sono binari e la
-#  loro storia gonfierebbe il repo. Serve una volta sola: Settings > Pages > Branch gh-pages.
+#  Ogni pubblicazione è un commit normale sul ramo gh-pages (niente push forzati): git salva ogni
+#  wheel una volta sola, quindi la storia cresce solo dei wheel nuovi. Pages è già attivo su gh-pages.
 #
 #  Uso: scripts/pubblica-indice.sh            (prepara build/pages e mostra cosa pubblicherebbe)
-#       PUBBLICA=1 scripts/pubblica-indice.sh  (fa anche il push forzato di gh-pages)
+#       PUBBLICA=1 scripts/pubblica-indice.sh  (fa anche il commit e il push su gh-pages)
 # =============================================================================
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -44,10 +44,15 @@ echo "$(ls "$out"/wheels/*.whl | wc -l) wheel, $(du -sh "$out" | cut -f1)"
 [ -n "${PUBBLICA:-}" ] || { echo "Prova: niente pubblicato (PUBBLICA=1 per il push)"; exit 0; }
 
 url=$(git remote get-url origin)
-cd "$out"
-git init -q -b gh-pages
+name=$(git config user.name) email=$(git config user.email)
+# copia del ramo con solo l'ultimo commit, contenuto sostituito da quello di $out
+rm -rf build/gh-pages
+git clone -q --depth 1 --branch gh-pages "$url" build/gh-pages
+find build/gh-pages -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+cp -r "$out"/. build/gh-pages/
+cd build/gh-pages
 git add -A
-git -c user.name="$(git -C ../.. config user.name)" -c user.email="$(git -C ../.. config user.email)" \
-  commit -qm "Indice dei wheel Android"
-git push -qf "$url" gh-pages
+if git diff --cached --quiet; then echo "Niente di nuovo da pubblicare"; exit 0; fi
+git -c user.name="$name" -c user.email="$email" commit -qm "Indice dei wheel Android: $(ls wheels/*.whl | wc -l) pacchetti"
+git push -q origin gh-pages
 echo "Pubblicato: https://mattemn97.github.io/HAndroid/wheels/"

@@ -121,6 +121,18 @@ def main():
     here = __file__.rsplit("/", 1)[0].rsplit("\\", 1)[0]
     index_list = sys.argv[2] if len(sys.argv) > 2 else None
     found = {}  # nome -> (versione, classe, richiesto da)
+    # HA installa le integrazioni con package_constraints.txt, che fissa versioni precise (es. cffi==2.0.0):
+    # i wheel devono essere proprio quelle, altrimenti pip prova a compilare il sorgente sul telefono
+    constraints = {}
+    for line in ha_wheel(ha_version).read("homeassistant/package_constraints.txt").decode().splitlines():
+        line = line.split("#")[0].strip()
+        if line and not line.startswith("-"):
+            try:
+                c = Requirement(line)
+            except Exception:
+                continue
+            if c.marker is None or c.marker.evaluate(ENV):
+                constraints[canonicalize_name(c.name)] = c.specifier
     if index_list:
         queue = manifest_requirements(ha_version, index_list)
     else:
@@ -138,7 +150,7 @@ def main():
         def fetch(item):
             key, req, parent = item
             data = pypi(key)
-            version = choose(data, req.specifier)
+            version = choose(data, req.specifier & constraints.get(key, req.specifier))
             detail = pypi(key, version)
             return key, version, parent, classify(detail["urls"]), deps(detail["info"])
         for key, version, parent, cls, reqs in pool.map(fetch, new):

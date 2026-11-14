@@ -2,7 +2,7 @@
 
 Generato da `scripts/dipendenze-android.py 2026.11.1 tutte` (arm64, Python 3.14). Queste integrazioni non sono nell'APK: HA scarica le loro librerie con pip quando le aggiungi. I pacchetti nativi qui sotto vanno compilati e pubblicati nell'indice dei wheel.
 
-Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorgente.
+Totale 1620: 1428 puri, 2 con wheel Android, **59 da compilare**, 131 solo sorgente.
 
 ## Da compilare con cibuildwheel
 
@@ -21,8 +21,8 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | bluetooth-data-tools | 1.29.24 | integrazione bluetooth |
 | cached-ipaddress | 1.1.2 | integrazione dhcp |
 | cbor2 | 6.2.1 | airthings-ble |
-| cffi | 2.1.1 | pynacl |
-| ciso8601 | 2.4.1 | yalexs |
+| cffi | 2.0.0 | pynacl |
+| ciso8601 | 2.3.3 | yalexs |
 | convertertools | 1.1.0 | uiprotect |
 | cryptography | 50.0.2 | yalexs-ble |
 | dbus-fast | 5.0.22 | integrazione bluetooth |
@@ -33,7 +33,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | fnv-hash-fast | 2.0.3 | integrazione recorder |
 | gazetteer-matcher | 1.1.0 | integrazione conversation |
 | greenlet | 3.5.6 | sqlalchemy |
-| grpcio | 1.85.1 | hass-nabucasa |
+| grpcio | 1.83.1 | hass-nabucasa |
 | guppy3 | 3.1.7 | integrazione profiler |
 | habluetooth | 7.1.2 | integrazione bluetooth |
 | ijson | 3.6.0 | azure-kusto-data |
@@ -63,7 +63,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | rpds-py | 2026.9.1 | jsonschema |
 | scipy | 1.18.1 | reverse-geocode |
 | slixmpp | 1.17.0 | integrazione xmpp |
-| tibs | 2.0.2 | bitstring |
+| tibs | 0.5.7 | bitstring |
 | ujson | 6.1.0 | ayla-iot-unofficial |
 | watchdog | 6.0.0 | integrazione folder_watcher |
 | zeroconf | 0.152.0 | integrazione zeroconf |
@@ -155,6 +155,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | pymochad | 0.2.0 | integrazione mochad |
 | pynetio | 0.1.9.1 | integrazione netio |
 | pynzbgetapi | 0.2.0 | integrazione nzbget |
+| pypasser | 0.0.5 | tami4edgeapi |
 | pyprof2calltree | 1.4.5 | integrazione profiler |
 | pyprosegur | 0.0.14 | integrazione prosegur |
 | pyqrcode | 1.2.1 | integrazione homekit |
@@ -421,7 +422,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | attrs | 26.1.0 | zhong-hong-hvac |
 | aurorapy | 0.2.7 | integrazione aurora_abb_powerone |
 | autarco | 3.2.0 | integrazione autarco |
-| auth0-python | 6.10.0 | sharkiq |
+| auth0-python | 4.13.0 | sharkiq |
 | authlib | 1.9.5 | pyvicare |
 | autocommand | 2.2.2 | oathtool |
 | automower-ble | 0.2.9 | integrazione husqvarna_automower_ble |
@@ -448,7 +449,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | bellows | 1.2.1 | zha |
 | besen | 0.6.1 | integrazione besen |
 | bidict | 0.24.1 | python-socketio |
-| bitstring | 5.0.0 | pysml |
+| bitstring | 4.4.0 | pysml |
 | bitvis-protobuf | 2.0.5 | integrazione bitvis |
 | bleach | 6.4.0 | fints |
 | bleak | 3.0.2 | integrazione bluetooth |
@@ -487,7 +488,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | certifi | 2026.10.23 | aiowatttime |
 | cfgv | 3.5.0 | pre-commit |
 | chacha20poly1305-reuseable | 0.13.2 | aiohomekit |
-| charset-normalizer | 3.5.2 | requests |
+| charset-normalizer | 3.4.3 | requests |
 | chefiq-ble | 1.1.1 | integrazione chef_iq |
 | chess-com-api | 1.1.0 | integrazione chess_com |
 | cielo-connect-api | 1.0.6 | integrazione cielo_home |
@@ -524,7 +525,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | dateparser | 1.5.0 | georss-ign-sismologia-client |
 | debugpy | 1.8.22 | integrazione debugpy |
 | decora-wifi | 1.4 | integrazione decora_wifi |
-| decorator | 5.3.1 | mastodon-py |
+| decorator | 5.2.1 | mastodon-py |
 | deepmerge | 4.0.0 | aioipp |
 | defusedxml | 0.7.1 | integrazione sonos |
 | deluge-client | 1.10.2 | integrazione deluge |
@@ -674,7 +675,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | gps3 | 0.33.3 | integrazione gpsd |
 | gql | 4.4.0 | pytibber |
 | grandstream-home-api | 0.1.7 | integrazione grandstream_home |
-| graphql-core | 3.3.2 | pydrawise |
+| graphql-core | 3.2.14 | pydrawise |
 | graphviz | 0.21 | objgraph |
 | greeclimate | 3.5.2 | integrazione gree |
 | greencell-client | 1.0.3 | integrazione greencell |
@@ -683,8 +684,8 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | gridnet | 5.0.1 | integrazione pure_energie |
 | growattserver | 2.2.0 | integrazione growatt_server |
 | grpc-google-iam-v1 | 0.14.6 | google-cloud-pubsub |
-| grpcio-reflection | 1.85.1 | yagrc |
-| grpcio-status | 1.85.1 | google-cloud-pubsub |
+| grpcio-reflection | 1.83.1 | yagrc |
+| grpcio-status | 1.83.1 | google-cloud-pubsub |
 | gspread | 6.2.1 | integrazione google_sheets |
 | gtfs-realtime-bindings | 2.0.0 | py-nymta |
 | gtts | 2.5.4 | integrazione google_translate |
@@ -729,13 +730,13 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | html-table-parser-python3 | 0.1.5 | bthomehub5-devicelist |
 | html5lib | 1.1 | mechanize |
 | httpcore | 1.0.9 | python-telegram-bot |
-| httpcore2 | 2.16.0 | httpx2 |
+| httpcore2 | 2.14.0 | httpx2 |
 | httplib2 | 0.32.1 | pytouchline-extended |
 | httpx | 0.28.1 | python-xbox |
 | httpx-retries | 0.6.0 | iaqualink |
 | httpx-sse | 0.4.3 | aiohomeconnect |
 | httpx-ws | 0.9.0 | fish-audio-sdk |
-| httpx2 | 2.16.0 | openai |
+| httpx2 | 2.14.0 | openai |
 | hueble | 2.3.0 | integrazione hue_ble |
 | humanfriendly | 10.0 | coloredlogs |
 | huum | 0.8.2 | integrazione huum |
@@ -1005,7 +1006,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | prometheus-client | 0.21.0 | integrazione prometheus |
 | propcache | 0.5.4 | yalexs |
 | proto-plus | 1.29.0 | google-cloud-pubsub |
-| protobuf | 7.36.2 | tesla-fleet-api |
+| protobuf | 7.36.0 | tesla-fleet-api |
 | prowlpy | 1.1.5 | integrazione prowl |
 | proxmoxer | 2.3.0 | integrazione proxmoxve |
 | psnawp | 3.0.3 | integrazione playstation_network |
@@ -1069,7 +1070,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | pycync | 0.6.1 | integrazione cync |
 | pydaikin | 2.22.1 | integrazione daikin |
 | pydanfossair | 1.0.0 | integrazione danfoss_air |
-| pydantic | 2.14.3 | zwave-js-server-python |
+| pydantic | 2.14.1 | zwave-js-server-python |
 | pydantic-settings | 2.16.3 | pyteleinfo |
 | pydantic-xml | 2.22.0 | pyrejseplan |
 | pydeako | 0.6.0 | integrazione deako |
@@ -1190,7 +1191,6 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | pypalazzetti | 0.1.21 | integrazione palazzetti |
 | pypaperless | 5.2.3 | integrazione paperless_ngx |
 | pyparsing | 3.3.3 | httplib2 |
-| pypasser | 1.1.0 | tami4edgeapi |
 | pypca | 0.0.7 | integrazione elv |
 | pypck | 0.9.13 | integrazione lcn |
 | pypglab | 0.0.5 | integrazione pglab |
@@ -1257,7 +1257,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | pyteleinfo | 0.4.0 | integrazione teleinfo |
 | python-aidot | 0.3.59 | integrazione aidot |
 | python-awair | 0.2.5 | integrazione awair |
-| python-backoff | 3.1.0 | wled |
+| python-backoff | 2.3.1 | wled |
 | python-bsblan | 6.2.1 | integrazione bsblan |
 | python-citybikes | 0.3.3 | integrazione citybikes |
 | python-dateutil | 4.0.0 | yalexs |
@@ -1416,7 +1416,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | sentry-sdk | 2.48.0 | integrazione sentry |
 | sepaxml | 2.7.0 | fints |
 | serialx | 1.15.1 | integrazione usb |
-| setuptools | 84.2.1 | colorzero |
+| setuptools | 84.0.0 | colorzero |
 | sfrbox-api | 0.2.1 | integrazione sfr_box |
 | sharkiq | 1.5.0 | integrazione sharkiq |
 | shellingham | 1.5.4 | typer |
@@ -1457,7 +1457,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | sqlparse | 0.6.0 | integrazione sql |
 | srp | 1.0.22 | pyicloud |
 | srpenergy | 1.3.8 | integrazione srp_energy |
-| srptools | 2.0.0 | pyatv |
+| srptools | 1.0.1 | pyatv |
 | sse-starlette | 3.7.0 | mcp |
 | starkbank-ecdsa | 2.3.1 | sendgrid |
 | starlette | 1.10.0 | mcp |
@@ -1517,7 +1517,7 @@ Totale 1620: 1429 puri, 2 con wheel Android, **59 da compilare**, 130 solo sorge
 | transmission-rpc | 7.0.3 | integrazione transmission |
 | triggercmd | 0.0.36 | integrazione triggercmd |
 | trmnl | 0.1.1 | integrazione trmnl |
-| truststore | 0.10.5 | httpx2 |
+| truststore | 0.10.4 | httpx2 |
 | ttls | 1.11.1 | integrazione twinkly |
 | ttn-client | 1.3.0 | integrazione thethingsnetwork |
 | tuya-device-handlers | 0.0.34 | integrazione tuya |

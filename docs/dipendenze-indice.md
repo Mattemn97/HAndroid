@@ -13,14 +13,14 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | bleak-esphome | 4.0.0 | integrazione esphome |
 | bluetooth-data-tools | 1.29.24 | integrazione bluetooth |
 | cached-ipaddress | 1.1.2 | integrazione dhcp |
-| cffi | 2.1.1 | pynacl |
-| ciso8601 | 2.4.1 | hass-nabucasa |
+| cffi | 2.0.0 | pynacl |
+| ciso8601 | 2.3.3 | hass-nabucasa |
 | cryptography | 50.0.2 | androidtvremote2 |
 | dbus-fast | 5.0.22 | integrazione bluetooth |
 | fnv-hash-fast | 2.0.3 | integrazione recorder |
 | gazetteer-matcher | 1.1.0 | integrazione conversation |
 | greenlet | 3.5.6 | sqlalchemy |
-| grpcio | 1.85.1 | hass-nabucasa |
+| grpcio | 1.83.1 | hass-nabucasa |
 | habluetooth | 7.1.2 | integrazione bluetooth |
 | jiter | 0.19.0 | openai |
 | lru-dict | 1.4.1 | bleak-esphome |
@@ -31,7 +31,7 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | pillow | 13.0.0 | integrazione image_upload |
 | psutil | 7.2.2 | psutil-home-assistant |
 | pycares | 5.2.1 | aiodns |
-| pydantic-core | 2.50.4 | pydantic |
+| pydantic-core | 2.50.1 | pydantic |
 | pymicro-vad | 1.0.1 | integrazione assist_pipeline |
 | pynacl | 1.6.2 | integrazione mobile_app |
 | pyyaml | 6.0.3 | python-miio |
@@ -72,10 +72,10 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | aiowebostv | 1.0.1 | integrazione webostv |
 | androidtvremote2 | 0.3.3 | integrazione androidtv_remote |
 | annotated-types | 0.8.0 | pydantic |
-| anyio | 4.16.0 | openai |
+| anyio | 4.15.1 | openai |
 | appdirs | 1.4.4 | python-miio |
 | async-interrupt | 1.2.2 | aiohomekit |
-| async-timeout | 5.0.1 | ha-ffmpeg |
+| async-timeout | 4.0.3 | ha-ffmpeg |
 | async-upnp-client | 0.49.0 | integrazione samsungtv |
 | asyncclick | 8.4.2.1 | python-kasa |
 | asyncinotify | 4.4.4 | aiousbwatcher |
@@ -87,14 +87,14 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | bleak-retry-connector | 4.7.1 | integrazione bluetooth |
 | bluetooth-adapters | 2.4.0 | integrazione bluetooth |
 | bluetooth-auto-recovery | 1.6.4 | integrazione bluetooth |
-| boto3 | 1.44.2 | pycognito |
-| botocore | 1.44.2 | boto3 |
+| boto3 | 1.42.97 | pycognito |
+| botocore | 1.42.97 | boto3 |
 | broadlink-async | 1.2.1 | integrazione broadlink |
 | btsocket | 0.3.0 | bluetooth-auto-recovery |
 | casttube | 0.2.1 | pychromecast |
 | certifi | 2026.10.23 | requests |
 | chacha20poly1305-reuseable | 0.13.2 | aiohomekit |
-| charset-normalizer | 3.5.2 | requests |
+| charset-normalizer | 3.4.3 | requests |
 | click | 8.5.1 | python-miio |
 | croniter | 7.0.0 | python-miio |
 | dacite | 1.9.2 | matter-python-client |
@@ -113,8 +113,8 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | hatasmota | 0.10.2 | integrazione tasmota |
 | home-assistant-frontend | 20261028.5 | integrazione frontend |
 | home-assistant-intents | 2026.10.27 | integrazione conversation |
-| httpcore2 | 2.16.0 | httpx2 |
-| httpx2 | 2.16.0 | openai |
+| httpcore2 | 2.14.0 | httpx2 |
+| httpx2 | 2.14.0 | openai |
 | icmplib | 3.0.4 | hass-nabucasa |
 | idna | 3.20 | requests |
 | ifaddr | 0.2.0 | integrazione network |
@@ -129,24 +129,24 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | openai | 3.26.0 | integrazione cloud |
 | paho-mqtt | 2.1.0 | integrazione mqtt |
 | propcache | 0.5.4 | cached-ipaddress |
-| protobuf | 7.36.2 | androidtvremote2 |
+| protobuf | 7.36.0 | androidtvremote2 |
 | psutil-home-assistant | 0.0.1 | integrazione recorder |
 | pychromecast | 14.1.1 | integrazione cast |
 | pycognito | 2024.5.1 | hass-nabucasa |
 | pycparser | 3.12 | cffi |
-| pydantic | 2.14.3 | openai |
+| pydantic | 2.14.1 | openai |
 | pyjwt | 2.15.1 | hass-nabucasa |
 | pyopenssl | 26.4.0 | acme |
 | pyrfc3339 | 2.1.1 | acme |
 | pyroute2 | 0.9.7 | aiodiscover |
-| python-backoff | 3.1.0 | wled |
+| python-backoff | 2.3.1 | wled |
 | python-dateutil | 4.0.0 | croniter |
 | python-didl-lite | 1.5.2 | async-upnp-client |
 | python-kasa | 0.12.0 | integrazione tplink |
 | python-miio | 0.5.12 | integrazione xiaomi_miio |
 | pytz | 2026.6 | python-miio |
 | requests | 2.34.2 | samsungtvws |
-| s3transfer | 0.19.3 | boto3 |
+| s3transfer | 0.16.1 | boto3 |
 | samsungtvws | 3.0.7 | integrazione samsungtv |
 | scapy | 2.8.0 | aiodhcpwatcher |
 | sentence-stream | 1.4.0 | hass-nabucasa |
@@ -157,7 +157,7 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | sonos-websocket | 0.2.0 | integrazione sonos |
 | sqlalchemy | 2.0.54 | integrazione recorder |
 | tqdm | 4.70.1 | python-miio |
-| truststore | 0.10.5 | httpx2 |
+| truststore | 0.10.4 | httpx2 |
 | tuya-device-handlers | 0.0.34 | integrazione tuya |
 | tuya-device-sharing-sdk | 0.2.15 | integrazione tuya |
 | typing-extensions | 4.16.0 | serialx |

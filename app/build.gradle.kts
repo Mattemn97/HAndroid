@@ -1,7 +1,14 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+// Firma dei rilasci: keystore.properties (fuori da git) con storeFile, storePassword, keyAlias, keyPassword.
+// Senza, assembleRelease produce un APK non firmato. Vedi scripts/rilascio.sh.
+val firma = rootProject.file("keystore.properties").takeIf { it.exists() }
+    ?.let { f -> Properties().apply { f.inputStream().use { load(it) } } }
 
 android {
     namespace = "it.handroid"
@@ -21,6 +28,20 @@ android {
 
     externalNativeBuild {
         cmake { path = file("src/main/cpp/CMakeLists.txt") }
+    }
+
+    signingConfigs {
+        if (firma != null) create("rilascio") {
+            storeFile = file(firma.getProperty("storeFile"))
+            storePassword = firma.getProperty("storePassword")
+            keyAlias = firma.getProperty("keyAlias")
+            keyPassword = firma.getProperty("keyPassword")
+        }
+    }
+    buildTypes {
+        release {
+            if (firma != null) signingConfig = signingConfigs.getByName("rilascio")
+        }
     }
 
     // python.zip è già compresso: niente doppia compressione

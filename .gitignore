@@ -5,6 +5,9 @@ build/
 app/build/
 app/.cxx/
 local.properties
+# firma dei rilasci (scripts/rilascio.sh)
+keystore.properties
+*.jks
 # prodotti da scripts/prepara-python-android.sh e compila-wheel-android.sh
 app/python/
 app/src/main/jniLibs/

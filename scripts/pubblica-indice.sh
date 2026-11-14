@@ -18,6 +18,8 @@ cd "$(dirname "$0")/.."
 out=build/pages
 rm -rf "$out" && mkdir -p "$out/wheels"
 cp sito/* "$out/"
+# repository ufficiale degli add-on (AddonStato.REPO_UFFICIALE)
+cp -r addons "$out/addons"
 # solo i wheel Android e quelli puri compilati da noi (gli altri pip li trova su PyPI)
 cp wheels/*android*arm64*.whl wheels/*-none-any.whl "$out/wheels/" 2>/dev/null || true
 touch "$out/.nojekyll"

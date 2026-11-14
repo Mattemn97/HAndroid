@@ -5,6 +5,7 @@ Qui si raccolgono gli adattamenti all'ambiente Android, applicati da fuori.
 import logging
 import os
 import re
+import shutil
 import subprocess
 import sys
 
@@ -28,6 +29,13 @@ _FILES = os.path.dirname(os.path.abspath(sys.argv[sys.argv.index("--config") + 1
 os.environ.setdefault("HOME", _FILES)
 os.environ.setdefault("TMPDIR", os.path.join(os.path.dirname(_FILES), "cache"))
 _STATO = os.path.join(_FILES, "stato.txt")
+
+# integrazione "handroid" (gestione degli add-on, M3): si copia a ogni avvio, così segue l'APK
+_CUSTOM = os.path.join(sys.argv[sys.argv.index("--config") + 1], "custom_components", "handroid")
+shutil.rmtree(_CUSTOM, ignore_errors=True)
+shutil.copytree(os.path.join(os.path.dirname(__file__), "custom_components", "handroid"), _CUSTOM,
+                ignore=shutil.ignore_patterns("__pycache__"))
+
 
 def _read(name):
     try:

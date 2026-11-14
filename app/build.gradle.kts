@@ -13,8 +13,8 @@ android {
         minSdk = 24 // minimo richiesto da CPython per Android
         targetSdk = 35
         // la versione si confronta con il tag dei rilasci su GitHub (Maintenance.newerRelease)
-        versionCode = 3
-        versionName = "0.2.0-m2"
+        versionCode = 4
+        versionName = "0.3.0-m3"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=none" } }
     }
@@ -40,4 +40,6 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     testImplementation("junit:junit:4.13.2")
+    // org.json di Android nei test JVM è solo uno stub: serve quella vera (AddonTest)
+    testImplementation("org.json:json:20240303")
 }

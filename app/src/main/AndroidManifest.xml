@@ -83,5 +83,18 @@
                 android:value="Server Home Assistant locale sempre attivo" />
         </service>
 
+        <!-- add-on (M3): un processo per add-on, al massimo 3 insieme (AddonManager sceglie lo slot) -->
+        <service android:name=".addon.AddonService1" android:exported="false"
+            android:foregroundServiceType="specialUse" android:process=":addon1">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Add-on di Home Assistant" />
+        </service>
+        <service android:name=".addon.AddonService2" android:exported="false"
+            android:foregroundServiceType="specialUse" android:process=":addon2">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Add-on di Home Assistant" />
+        </service>
+        <service android:name=".addon.AddonService3" android:exported="false"
+            android:foregroundServiceType="specialUse" android:process=":addon3">
+            <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="Add-on di Home Assistant" />
+        </service>
     </application>
 </manifest>

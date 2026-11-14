@@ -52,6 +52,8 @@ class HaService : Service() {
             // hardware del telefono per HA (M2): dispositivo ESPHome con proxy Bluetooth, ponte USB
             it.handroid.esphome.EspHome.avvia(this)
             UsbPonte.avvia(this)
+            // add-on (M3): API locale su 127.0.0.1:8099 e avvio automatico, nei processi :addonN
+            it.handroid.addon.AddonManager.avvia(this)
             thread(name = "hass") { runAndSupervise() }
             thread(name = "watchdog", isDaemon = true) { watchdog() }
         }

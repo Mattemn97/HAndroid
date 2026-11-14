@@ -73,7 +73,7 @@ if [ ${#missing[@]} -gt 0 ]; then
 fi
 
 # impronta di tutto ciò che finisce nello zip: se non cambia, lo zip attuale va già bene
-stamp=$(cat build/requisiti-android.txt app/src/main/python/*.py "$0" <(ls -l wheels) <(echo "$LANGS")   docs/dipendenze-indice.md 2>/dev/null | sha1sum)
+stamp=$(cat build/requisiti-android.txt <(find app/src/main/python -type f ! -path "*__pycache__*" | sort | xargs cat) "$0" <(ls -l wheels) <(echo "$LANGS")   docs/dipendenze-indice.md 2>/dev/null | sha1sum)
 if [ -f app/src/main/assets/python.zip ] && [ "$stamp" = "$(cat "$WORK/impronta" 2>/dev/null)" ]; then
   echo "Nessuna modifica: python.zip è già aggiornato"
   exit 0
@@ -87,7 +87,7 @@ rm -rf "$WORK/site-packages" "$WORK/impronta" && mkdir -p "$WORK/site-packages"
   --python-version "$PY_VERSION" --implementation cp --abi cp314 --abi abi3 --abi none \
   --find-links wheels \
   -r build/requisiti-android.txt
-cp app/src/main/python/*.py "$WORK/site-packages/"
+cp -r app/src/main/python/. "$WORK/site-packages/"  # handroid_*.py e custom_components/handroid
 
 # wheel per le integrazioni installate a runtime (sezione "Da compilare" di dipendenze-indice.md)
 rm -rf "$WORK/wheels" && mkdir -p "$WORK/wheels"

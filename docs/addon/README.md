@@ -1,55 +1,64 @@
 # Add-on di HAndroid
 
-> **Bozza.** Gli add-on arrivano con la milestone M3: il formato è descritto qui per chi vuole iniziare a progettarne uno, ma l'app non li gestisce ancora. Ogni cambio di formato va segnato in fondo a questo file.
+Gli add-on di Home Assistant OS sono immagini Docker, e Android senza root non le può eseguire. HAndroid usa pacchetti piccoli, descritti da un manifest YAML e scaricati da un repository HTTPS. Le decisioni sono nella [spec 0006](../specs/0006-addon.md).
 
-## Perché un formato nostro
+## Come gira un add-on
 
-Gli add-on di Home Assistant OS sono immagini Docker, e Android senza root non le può eseguire. HAndroid usa invece pacchetti piccoli, scaricati solo quando servono e descritti da un manifest YAML.
+- Ogni add-on attivo ha un **processo Android tutto suo** (`it.handroid:addon1`…`:addon3`): al massimo 3 insieme. Un crash dell'add-on non tocca HA, e gli add-on sopravvivono a un riavvio di HA.
+- Il gestore sta nel processo di HA e risponde su `127.0.0.1:8099` (token in `files/addons/token`, leggibile solo dall'app).
+- In HA l'integrazione **Add-on HAndroid** (Impostazioni → Dispositivi e servizi → Aggiungi → HAndroid) mostra un dispositivo per add-on, con sensore di stato e interruttore, più i servizi `handroid.install`, `start`, `stop`, `uninstall`, `set_options`, `repository`, `refresh`.
 
 ## Due tipi
 
-| Tipo | Cosa contiene | Come gira | Esempi |
-| --- | --- | --- | --- |
-| `python` | un servizio Python | processo separato, con lo stesso interprete di HA | bridge, piccoli server |
-| `native` | binari arm64 compilati | dentro un **APK companion**: Android esegue solo codice che arriva da un APK installato | Mosquitto, Zigbee2MQTT (Node), Matter Server, go2rtc |
+| Tipo | Cosa contiene | Come gira |
+| --- | --- | --- |
+| `python` | file Python e requisiti pip | con lo stesso Python di HA, nel processo dell'add-on. I requisiti si installano al primo avvio in `addons/<slug>/site`, solo da wheel (anche dall'[indice Android](https://mattemn97.github.io/HAndroid/wheels/)) |
+| `native` | un eseguibile arm64 | deve essere **dentro l'APK** come `lib<nome>.so` in `jniLibs`: Android esegue solo codice installato con l'app. Un add-on nativo nuovo richiede quindi una nuova versione dell'APK |
 
-Le librerie native di un add-on `python` si compilano come quelle di HA, con `scripts/compila-wheel-android.sh`.
+## Repository
 
-## Manifest
+Una cartella HTTPS con:
 
-Un file `addon.yaml` nella radice dell'add-on:
-
-```yaml
-slug: mosquitto            # identificativo unico, minuscolo
-name: Mosquitto
-version: 2.0.20
-type: native               # python | native
-description: Broker MQTT
-ports: [1883]              # porte TCP aperte su 127.0.0.1 (o su tutte le interfacce se dichiarato)
-permissions: [network]     # network | bluetooth | usb | storage
-options:                   # valori di default
-  allow_anonymous: false
-schema:                    # tipi delle opzioni: genera la schermata delle impostazioni
-  allow_anonymous: bool
+```
+index.json              {"name": "Il mio repository", "addons": ["mqtt"]}
+mqtt/config.yaml        manifest dell'add-on
+mqtt/broker.py          file elencati in "files"
 ```
 
-Campi per tipo:
+Il repository ufficiale è la cartella [`addons/`](../../addons) di questo repo, pubblicata su `https://mattemn97.github.io/HAndroid/addons` da `scripts/pubblica-indice.sh`. Altri si aggiungono con il servizio `handroid.repository`.
 
-- `python`: `entrypoint: pacchetto.modulo` e `requirements:` (come in un requirements.txt).
-- `native`: `apk: <url dell'APK companion>` e `exec: <nome del binario>` dentro le librerie native dell'APK.
+## Manifest (`config.yaml`)
 
-Dal manifest l'app genera la schermata delle opzioni e il pannello nella barra laterale di HA.
+```yaml
+name: Broker MQTT
+version: 0.1.0
+type: python              # python | native
+description: Broker MQTT 3.1.1 leggero, sulla porta 1883.
+ports: [1883]             # due add-on con la stessa porta non girano insieme
+permissions: [network]    # network | bluetooth | usb | storage
+boot: auto                # auto: riparte con HA | manual
+pip: []                   # requisiti pip (solo wheel)
+files: [broker.py]        # scaricati accanto al manifest
+entry: broker.py          # python: file .py o modulo; native: <nome> di lib<nome>.so
+args: []                  # solo native
+options:                  # valori di default
+  port: 1883
+schema:                   # tipi delle opzioni, come in HA OS
+  port: port
+```
 
-## Indice degli add-on
+Tipi dello schema: `bool int float str password email url port list(a|b) int(min,max)`; un `?` finale rende l'opzione facoltativa.
 
-Un file JSON su GitHub elenca gli add-on di un repository. Chiunque può aggiungere un repository, come in HA OS. Il formato dell'indice verrà definito nella M3, in `docs/specs/`.
+Il parser YAML è ridotto: mappe per indentazione, liste `[a, b]` e `- a`, scalari, commenti. Niente ancore né stringhe su più righe.
 
-## Cose da decidere (M3)
+## Scrivere un add-on Python
 
-- Su Android 15, l'app principale può eseguire i binari nativi di un APK companion? Il piano B è includere gli add-on nativi principali nell'APK come moduli opzionali.
-- Come vengono passate le opzioni all'add-on: variabili d'ambiente, file JSON, o entrambi.
-- Come si aggiorna un add-on senza riavviare HA.
+- Le opzioni stanno nel file JSON indicato da `HANDROID_ADDON_OPTIONS` (cartella di lavoro: quella dell'add-on).
+- `print` e gli errori finiscono in `addons/<slug>/log.txt`, leggibile con `GET /addons/<slug>/log`.
+- Il codice d'uscita va in `uscita.txt`: diverso da 0 = stato `errore`.
+- Esempio completo: [`addons/mqtt/broker.py`](../../addons/mqtt/broker.py).
 
 ## Storico del formato
 
 - 2026-11-13: prima bozza, presa da `docs/progetto-handroid.md`.
+- 2026-11-13: formato attuato nella M3 (`config.yaml` per add-on, `index.json` per repository, campi `pip`, `files`, `entry`, `boot`); sostituisce la bozza (`addon.yaml`, APK companion).

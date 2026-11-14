@@ -2,6 +2,33 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-14 · M2, M3 e M4: hardware, add-on e rilascio pronti
+
+**Risultato:** sul 12T HA scopre i dispositivi in rete (Chromecast, Xbox, il telefono stesso), vede sensori e torcia del telefono come dispositivo ESPHome, e gestisce il primo add-on (broker MQTT) collegato all'integrazione MQTT. L'APK di rilascio firmato si costruisce con `scripts/rilascio.sh`; non è ancora pubblicato.
+
+**Fatto**
+- M2: dispositivo ESPHome, proxy Bluetooth e ponte USB della sessione notturna (tag `archivio/notte-2026-11-12`), portati e collegati a `HaService`; permessi Bluetooth chiesti dall'app.
+- `configuration.yaml` iniziale = `default_config` senza cloud, dhcp, stream e go2rtc: con `default_config` intero HA non caricava nemmeno zeroconf, Bluetooth e USB, ed è il motivo principale per cui "aggiungere dispositivi" non funzionava. Quello della M0 viene sostituito da solo.
+- `handroid_boot.py`: un requisito mancante di una after_dependency non blocca più l'integrazione (mobile_app partiva solo con cloud).
+- `dipendenze-android.py` applica `package_constraints.txt` di HA: prima i wheel avevano versioni diverse da quelle che HA installa (`cffi` 2.1.1 contro 2.0.0) e pip provava a compilare sul telefono. Compilati cffi 2.0.0, pydantic-core, psutil, miniaudio e altri; indice online a 180 pacchetti.
+- M3: gestore add-on (processi `:addon1..3`, API su `:8099`), integrazione "Add-on HAndroid", repository ufficiale su https://mattemn97.github.io/HAndroid/addons, spec 0006 e `docs/addon/README.md` aggiornati al formato vero.
+- M4: firma dei rilasci (chiave in `%USERPROFILE%\.handroid`), `scripts/rilascio.sh`, `scripts/installa-handroid.sh` (con `pm install`, che funziona su MIUI senza SIM), spec 0007, `docs/integrazioni-testate.md`.
+- L'app riavvia HA quando la apri se l'avvio automatico è attivo: MIUI non sempre consegna `MY_PACKAGE_REPLACED`.
+- `pubblica-indice.sh` fa commit normali su `gh-pages` (niente push forzati).
+
+**Provato sul 12T**
+- ESPHome: aggiunto da HA (anche trovato da zeroconf), 9 entità con valori veri, torcia accesa e spenta da HA, pulsante di riavvio (16 s).
+- Add-on MQTT: installato e avviato dall'API, pubblicazione/iscrizione e retained dal PC, acceso e spento dall'interruttore in HA, integrazione MQTT di HA collegata con discovery funzionante.
+- Riavvio dopo l'aggiornamento aprendo l'app: HA pronto in 51 s.
+- Test unitari: 29 su 29 (protocollo ESPHome, Bluetooth, add-on, manutenzione).
+
+**Ancora aperto**
+- Proxy Bluetooth: serve il permesso "Dispositivi nelle vicinanze" (MIUI non lo fa dare da adb) e un sensore BLE per provarlo.
+- Ponte USB: nessuna chiavetta Zigbee per la prova.
+- Rilascio su GitHub: pronto, da pubblicare con `PUBBLICA=1 scripts/rilascio.sh` dopo l'ok. L'APK firmato non aggiorna quello di debug installato: va fatto un backup e disinstallato.
+- Rinviati (motivi in `android-rinviati.txt`): grpcio (cloud), av (telecamere), lxml, scipy, pandas, awscrt, isal, evdev, ijson, faust-cchardet.
+- Utente di prova `handroid-test` creato in HA per le prove dal PC: da togliere (Impostazioni → Persone → Utenti).
+
 ## 2026-11-13 · M1: prove sul 12T e indice dei wheel online
 
 **Risultato:** sul Xiaomi 12T HA riparte da solo dopo un `kill -9` (120 s) e dopo il riavvio del telefono (63 s). L'indice dei wheel Android è online su https://mattemn97.github.io/HAndroid/, con la pagina del progetto nello stesso tema di mattemn97.github.io, ed è nell'elenco dei progetti del sito.

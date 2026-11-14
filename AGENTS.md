@@ -35,7 +35,10 @@ adb logcat -s HAndroid python.stdout python.stderr
 - In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows.
 - `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.
 - Le integrazioni installate a runtime con pacchetti nativi vanno in `scripts/integrazioni-indice.txt` (tabella `docs/dipendenze-indice.md`).
-- La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages`, che ha un solo commit riscritto ogni volta.
+- La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages` con un commit normale (niente push forzati).
+- Le versioni dei wheel seguono `package_constraints.txt` di HA (lo applica `dipendenze-android.py`): un wheel con un'altra versione per pip sul telefono non esiste.
+- Sul 12T senza SIM: installa con `adb push` in `/data/local/tmp` + `pm install -r`; `input` e `pm grant` sono bloccati.
+- Non modificare uno script bash mentre gira in background: bash lo legge a pezzi e si rompe. Lancia una copia.
 - Stato condiviso tra il processo dell'app e `:ha`: file in `files/`, non SharedPreferences.
 - Le librerie delle integrazioni caricate all'avvio vanno in `scripts/integrazioni-base.txt`; i pacchetti nativi che non si compilano in `scripts/android-rinviati.txt`, col motivo.
 - Su Windows `sdkmanager.bat` spezza gli argomenti al `;`: passare i pacchetti con `--package_file`.

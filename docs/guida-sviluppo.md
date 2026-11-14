@@ -13,8 +13,10 @@ Stato attuale: **M0 chiusa, M1 (server affidabile) in corso**. HA gira sul Xiaom
 5. [Aggiornare Home Assistant](#aggiornare-home-assistant)
 6. [Lavorare sulle dipendenze native](#lavorare-sulle-dipendenze-native)
 7. [Sviluppare un add-on](#sviluppare-un-add-on)
-8. [Server sempre acceso](#server-sempre-acceso)
-9. [Problemi noti](#problemi-noti)
+8. [Hardware del telefono](#hardware-del-telefono)
+9. [Server sempre acceso](#server-sempre-acceso)
+10. [Rilasciare una versione](#rilasciare-una-versione)
+11. [Problemi noti](#problemi-noti)
 
 ## Come è fatto il progetto
 
@@ -74,7 +76,7 @@ Quando aggiungi un'integrazione, HA chiama `install_package`; `handroid_boot.py`
 Due livelli di wheel:
 
 - **nell'APK** i pacchetti delle integrazioni più usate (`scripts/integrazioni-indice.txt` → `docs/dipendenze-indice.md`), così funzionano anche senza rete;
-- **online** quelli di tutte le integrazioni di HA (`docs/dipendenze-tutte.md`), pubblicati su GitHub Pages da `scripts/pubblica-indice.sh` (ramo `gh-pages`, un solo commit riscritto ogni volta).
+- **online** quelli di tutte le integrazioni di HA (`docs/dipendenze-tutte.md`), pubblicati su GitHub Pages da `scripts/pubblica-indice.sh` (ramo `gh-pages`, un commit per pubblicazione: git salva ogni wheel una volta sola).
 
 ```bash
 python scripts/dipendenze-android.py 2026.11.1 scripts/integrazioni-indice.txt > docs/dipendenze-indice.md
@@ -171,11 +173,16 @@ adb shell am start -n it.handroid/.MainActivity
 adb logcat -s HAndroid python.stdout python.stderr
 ```
 
-Su MIUI `installDebug` fallisce con `INSTALL_FAILED_USER_RESTRICTED` se "Installa tramite USB" è spento, e MIUI lo attiva solo con SIM e account Xiaomi. In alternativa copia l'APK e installalo dal telefono (Gestione file → Download, consentendo le app da origini sconosciute):
+Su MIUI `installDebug` fallisce con `INSTALL_FAILED_USER_RESTRICTED` se "Installa tramite USB" è spento, e MIUI lo attiva solo con SIM e account Xiaomi. `pm install` dalla shell invece funziona:
 
 ```bash
-adb push app/build/outputs/apk/debug/app-debug.apk /sdcard/Download/HAndroid.apk
+adb push app/build/outputs/apk/debug/app-debug.apk /data/local/tmp/h.apk
+adb shell pm install -r /data/local/tmp/h.apk
 ```
+
+Sempre senza SIM, MIUI blocca `adb shell input` (niente tocchi simulati) e `pm grant` (i permessi Bluetooth si danno dall'app). Dopo un aggiornamento MIUI può non consegnare `MY_PACKAGE_REPLACED`, e se la richiesta dei permessi è aperta `am start` finisce lì: per riavviare da adb usa `am start -S --activity-clear-task -n it.handroid/.MainActivity --ez avvia true`.
+
+Per provare l'API di HA dal PC serve un utente: `hass --script auth` passando da `handroid_boot` (che salta il controllo del venv), poi un riavvio di HA. Gli script di prova usati il 13 novembre (login, WebSocket, config flow, client ESPHome e MQTT) sono descritti nel [registro](registro.md).
 
 Nell'app tocca **Avvia Home Assistant**, oppure da adb, senza toccare lo schermo:
 
@@ -212,6 +219,8 @@ bash scripts/prepara-python-android.sh
 
 ## Lavorare sulle dipendenze native
 
+`dipendenze-android.py` applica `homeassistant/package_constraints.txt` (preso dal wheel di HA): HA installa le integrazioni con quei vincoli, quindi i wheel devono avere proprio quelle versioni (es. `cffi==2.0.0`, non l'ultima). Senza, pip sul telefono prova a compilare il sorgente e fallisce.
+
 `dipendenze-android.py` classifica ogni pacchetto:
 
 | Classe | Significato | Cosa fare |
@@ -246,7 +255,39 @@ Se un pacchetto non si compila:
 
 ## Sviluppare un add-on
 
-Gli add-on arrivano con la **M3**: il formato è in bozza e può cambiare. La descrizione completa, con il manifest, è in [addon/README.md](addon/README.md).
+Formato, repository e come gira un add-on: [addon/README.md](addon/README.md); decisioni nella [spec 0006](specs/0006-addon.md). Per provarne uno senza l'interfaccia, dall'API del gestore:
+
+```bash
+adb forward tcp:8099 tcp:8099
+T=$(adb shell run-as it.handroid cat files/addons/token)
+curl -X POST -H "Authorization: Bearer $T" localhost:8099/refresh          # rilegge i repository
+curl -X POST -H "Authorization: Bearer $T" localhost:8099/addons/mqtt/install
+curl -X POST -H "Authorization: Bearer $T" localhost:8099/addons/mqtt/start
+curl -H "Authorization: Bearer $T" localhost:8099/addons/mqtt/log
+```
+
+Il repository ufficiale è `addons/`: dopo una modifica si pubblica con `PUBBLICA=1 bash scripts/pubblica-indice.sh`.
+
+## Hardware del telefono
+
+Tutto parte con HA, nel processo `:ha`:
+
+| Cosa | Come lo vede HA | Spec |
+| --- | --- | --- |
+| Sensori e comandi del telefono (batteria, luce, prossimità, Wi-Fi, torcia, riavvio) | dispositivo ESPHome "HAndroid", trovato da zeroconf o aggiunto a mano con `127.0.0.1`, porta `6053`, senza chiave | [0004](specs/0004-dispositivo-esphome.md) |
+| Bluetooth del telefono (termometri, sensori BLE) | proxy Bluetooth dello stesso dispositivo ESPHome; serve il permesso "Dispositivi nelle vicinanze" | [0005](specs/0005-proxy-bluetooth.md) |
+| Chiavette Zigbee e Z-Wave via USB-OTG | socket `socket://127.0.0.1:6638` (Zigbee) o `6639` (Z-Wave) da scrivere in ZHA o Z-Wave JS; stato in `ha-config/handroid_usb_stato.json` | [0003](specs/0003-ponte-usb-seriale.md) |
+
+`configuration.yaml` iniziale (`app/src/main/assets`) è `default_config` senza cloud (grpcio), dhcp (socket raw), stream e go2rtc (FFmpeg): con `default_config` intero HA non caricherebbe nemmeno il resto, perché basta una dipendenza fallita. `HaService` lo riscrive solo se manca o se è ancora quello della M0.
+
+`handroid_boot.py` rende tollerante un requisito mancante di una *after_dependency* (es. cloud per mobile_app): l'integrazione parte lo stesso, con un avviso nel log.
+
+Prova rapida del dispositivo ESPHome dal PC, con lo stesso client di HA:
+
+```bash
+adb forward tcp:6053 tcp:6053
+pip install aioesphomeapi   # poi APIClient("127.0.0.1", 6053, None)
+```
 
 ## Server sempre acceso
 
@@ -289,6 +330,19 @@ adb shell run-as it.handroid kill -9 $(adb shell pidof it.handroid:ha)          
 ```
 
 Su MIUI senza SIM `adb shell input` è bloccato: i pulsanti dell'app vanno premuti a mano.
+
+## Rilasciare una versione
+
+Decisioni nella [spec 0007](specs/0007-rilascio.md). Una volta per PC: la chiave di firma sta in `%USERPROFILE%\.handroid\` e `keystore.properties` (fuori da git) nella radice del repo la indica; tienine una copia altrove.
+
+```bash
+bash scripts/prepara-python-android.sh            # in WSL
+# alza versionName/versionCode in app/build.gradle.kts, voce nel registro, commit
+bash scripts/rilascio.sh                          # APK firmato in build/rilascio/, con SHA-256 e note
+PUBBLICA=1 bash scripts/rilascio.sh               # tag v<versione> e rilascio su GitHub
+```
+
+L'APK di rilascio ha una firma diversa da quello di debug: sul telefono si passa dall'uno all'altro solo disinstallando (prima un backup di HA).
 
 ## Problemi noti
 

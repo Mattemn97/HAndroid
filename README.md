@@ -2,7 +2,7 @@
 
 Questa cartella raccoglie tutto quello che serve per trasformare un vecchio **Xiaomi 12T** nel server Home Assistant di casa. Il server diventa il "master"; il telefono personale fa da "slave" e lo comanda con l'app Companion. Niente mini PC, niente Raspberry.
 
-Stato al 12 novembre 2026: è stata scelta la strada e gli script sono pronti, ma il telefono non è ancora stato preparato.
+Stato al 13 novembre 2026: **HAndroid** (strada C) gira sul 12T. Home Assistant parte dall'APK, riparte da solo, trova i dispositivi in rete, espone i sensori del telefono e ha il primo add-on (broker MQTT). Pagina del progetto e indice dei pacchetti: <https://mattemn97.github.io/HAndroid/>.
 
 ---
 
@@ -99,7 +99,14 @@ Un'app tutta nostra che fa girare il **vero** Home Assistant dentro l'APK, con P
 
 Il progetto completo (architettura, bridge, add-on, roadmap, rischi) è in [`docs/progetto-handroid.md`](docs/progetto-handroid.md). Per compilarlo, provarlo o sviluppare add-on parti da [`docs/guida-sviluppo.md`](docs/guida-sviluppo.md).
 
-Stato: milestone M0 in corso. Sull'emulatore Home Assistant parte dentro l'APK e mostra la configurazione iniziale; manca la prova sul Xiaomi 12T. Dettagli nel [registro](docs/registro.md). Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).
+Stato: milestoni M0-M3 fatte e provate sul 12T, M4 (rilascio) pronta da pubblicare. Manca il gate finale: 7 giorni di fila senza interventi. Dettagli nel [registro](docs/registro.md), integrazioni provate in [`docs/integrazioni-testate.md`](docs/integrazioni-testate.md).
+
+Installazione dal PC, con il telefono collegato in debug USB:
+
+```bash
+scripts/installa-handroid.sh                  # ultimo rilascio da GitHub
+scripts/installa-handroid.sh HAndroid.apk     # un APK locale
+``` Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).
 
 ---
 
@@ -143,7 +150,8 @@ Un telefono sempre in carica al 100% rischia che la batteria si gonfi. Le soluzi
 - [ ] Aggiungere Tuya, Xiaomi Home e Google Cast
 - [ ] Presa smart + automazione 30-80% per la batteria
 - [ ] (Opzionale) ESP32 come proxy Bluetooth per i sensori Xiaomi BLE
-- [ ] (Progetto) HAndroid, milestone M0: un'app Android minima che avvia Home Assistant con Python 3.14 incorporato
+- [x] (Progetto) HAndroid M0-M3: Home Assistant nell'APK, server affidabile, hardware del telefono, add-on
+- [ ] HAndroid M4: primo rilascio su GitHub, poi 7 giorni di prova
 
 ## Note sugli script
 

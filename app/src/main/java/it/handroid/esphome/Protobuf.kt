@@ -22,6 +22,8 @@ class ProtoWriter {
         if (v != null && v.isNotEmpty()) { tag(campo, 2); rawVarint(out, v.size.toLong()); out.write(v) }
     }
 
+    fun messaggio(campo: Int, m: ProtoWriter) = bytes(campo, m.toByteArray())
+
     fun toByteArray(): ByteArray = out.toByteArray()
 
     private fun tag(campo: Int, tipo: Int) = rawVarint(out, (campo.toLong() shl 3) or tipo.toLong())
@@ -48,8 +50,11 @@ class ProtoReader(private val buf: ByteArray) {
         val string get() = String(dati ?: ByteArray(0), Charsets.UTF_8)
     }
 
-    fun campi(): Map<Int, Campo> {
-        val m = HashMap<Int, Campo>()
+    /** Campi per numero; dei campi ripetuti resta l'ultimo (per quelli c'è `lista`). */
+    fun campi(): Map<Int, Campo> = lista().associateBy { it.numero }
+
+    fun lista(): List<Campo> {
+        val m = ArrayList<Campo>()
         while (pos < buf.size) {
             val tag = varint()
             val numero = (tag ushr 3).toInt()
@@ -61,7 +66,7 @@ class ProtoReader(private val buf: ByteArray) {
                 5 -> Campo(numero, fixed(4), null)
                 else -> throw IllegalArgumentException("wire type non supportato")
             }
-            m[numero] = c
+            m += c
         }
         return m
     }

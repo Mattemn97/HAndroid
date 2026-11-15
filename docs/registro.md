@@ -2,6 +2,34 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-15 · 0.4.0: lampade FanLamp, integrazioni personalizzate, accesso remoto
+
+**Risultato:** versione 0.4.0 con il trasmettitore BLE per ble_adv, le correzioni per le integrazioni personalizzate (Xiaomi Home funziona sul 12T) e il tutorial [accesso-remoto.md](accesso-remoto.md) per usare HA da fuori casa con Tailscale. Dettagli nella voce qui sotto.
+
+## 2026-11-15 · Lampade FanLamp e integrazioni personalizzate
+
+**Risultato:** il dispositivo ESPHome del telefono fa anche da trasmettitore per [ble_adv](https://github.com/NicoIIT/ha-ble-adv): le lampade FanLamp Pro si possono comandare dal Bluetooth del 12T, senza ESP32 (spec 0008). Xiaomi Home e ble_adv sono installate sul 12T con il nuovo `scripts/installa-integrazione.sh`.
+
+**Fatto**
+- `BleAdv.kt` e `TrasmettitoreBle.kt`: sensore `ble_adv_proxy_name`, azioni `setup_svc_v0`/`adv_svc_v1`, evento `esphome.ble_adv.raw_adv`. Il server ESPHome ora sa dichiarare azioni (messaggi 41/42) e mandare eventi a HA (35). Permesso `BLUETOOTH_ADVERTISE` chiesto dall'app.
+- `pycryptodome` 4.4.0 compilato per Android e incluso nell'APK: ble_adv lo usa per l'AES di FanLamp. Nuova sintassi `pip:pacchetto` in `integrazioni-indice.txt` per i requisiti delle integrazioni personalizzate.
+- `scripts/installa-integrazione.sh proprietario/repo`: come HACS, dal PC. Xiaomi Home non va nell'APK: la sua licenza vieta di usarla per sviluppare app.
+
+**Provato sul 12T**
+- Con aioesphomeapi sul telefono: sensore e azioni visti; `adv_svc_v1` trasmette (Android conferma l'annuncio avviato).
+- pip installa i requisiti di Xiaomi Home e ble_adv; l'AES di pycryptodome dà il risultato atteso.
+- Test unitari: 34 su 34.
+
+**Corretto dopo la prima prova**
+- HA non vedeva Xiaomi Home né ble_adv: la cartella `custom_components` inclusa nell'APK (in `site-packages`) nascondeva quella in `ha-config`. Nell'elenco restava solo "Xiaomi Home" di xiaomi_miio, che chiede la password. Ora `handroid_boot.py` copia l'integrazione handroid e toglie la copia dall'APK.
+- Login di Xiaomi Home fallito su "token OAuth": Xiaomi Home crea un contesto SSL suo, e su Android OpenSSL non trova i certificati CA (`CERTIFICATE_VERIFY_FAILED` verso `de.ha.api.io.mi.com`). `handroid_boot.py` imposta `SSL_CERT_FILE` al file di certifi, in cima, prima di importare HA: aiohttp prepara il contesto SSL già all'import (al primo tentativo era dopo e non bastava). Verificato sul telefono con aiohttp.
+- Un `handroid_boot.py` copiato a mano non vale finché non si cancella il suo `.pyc` (compilato `unchecked-hash`): annotato nella guida.
+
+**Ancora aperto**
+- Prova con la lampada FanLamp vera e abbinamento da ble_adv. Login Xiaomi in Xiaomi Home.
+- pycryptodome non è ancora nell'indice online: va pubblicato con `PUBBLICA=1 scripts/pubblica-indice.sh` (è già nell'APK).
+- Un annuncio con strutture diverse da UUID/service data/manufacturer data non si trasmette (Android non accetta byte grezzi).
+
 ## 2026-11-14 · 0.3.1: URL modificabili per l'accesso da remoto
 
 **Risultato:** in Impostazioni → Sistema → Rete gli URL di HA erano bloccati ("configurazione salvata in configuration.yaml sotto la chiave homeassistant"). La causa era la sezione `homeassistant: name: HAndroid` del file iniziale: con quella HA rende di sola lettura tutta la configurazione generale. Tolta dal modello; `HaService` la toglie anche dai file esistenti. Sul 12T corretta a mano e verificata (HA riparte in 27 s).

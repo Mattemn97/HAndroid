@@ -46,7 +46,9 @@ object EspHome {
         Sensori(ctx, registro, Handler(thread.looper)).collega()
         val s = ApiServer(info, registro, soloLocale = !prefs.getBoolean("lan", false))
         // Proxy Bluetooth (spec 0005): va aggiunto prima che HA si colleghi, per DeviceInfo.
-        ProxyBle.crea(ctx, info.mac)?.let { s.moduli += it }
+        val proxy = ProxyBle.crea(ctx, info.mac)?.also { s.moduli += it }
+        // Trasmettitore per ble_adv (spec 0008): gli annunci visti dal proxy gli arrivano per gli eventi.
+        TrasmettitoreBle.crea(ctx, registro)?.let { t -> s.moduli += t; proxy?.grezzi = t::ricevuto }
         s.avvia()
         server = s
         annuncia(ctx, info, s.portaEffettiva)

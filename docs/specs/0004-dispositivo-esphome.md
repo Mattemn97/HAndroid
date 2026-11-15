@@ -18,6 +18,7 @@
 | `ApiServer.kt` | server TCP, handshake, dispatch, interfaccia `Modulo` per le estensioni | solo `Log` |
 | `EspHome.kt` | avvio dal processo `:ha`, mDNS con `NsdManager`, sensori del telefono | sì |
 | `Ble.kt`, `ProxyBle.kt` | proxy Bluetooth, vedi [0005](0005-proxy-bluetooth.md) | `Ble.kt` no, `ProxyBle.kt` sì |
+| `BleAdv.kt`, `TrasmettitoreBle.kt` | trasmettitore per ble_adv, vedi [0008](0008-trasmettitore-ble-adv.md) | `BleAdv.kt` no, `TrasmettitoreBle.kt` sì |
 
 I test JVM (`app/src/test`) coprono codec, framing, chiavi, limite di frequenza e una sessione completa su socket; si eseguono con `./gradlew testDebugUnitTest`.
 

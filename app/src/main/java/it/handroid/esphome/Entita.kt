@@ -18,8 +18,9 @@ object Msg {
     const val BINARY_SENSOR_STATE = 21; const val SENSOR_STATE = 25; const val SWITCH_STATE = 26
     const val TEXT_SENSOR_STATE = 27
     const val SUBSCRIBE_LOGS = 28; const val SWITCH_COMMAND = 33
-    const val SUBSCRIBE_HA_SERVICES = 34; const val GET_TIME_REQ = 36; const val GET_TIME_RESP = 37
-    const val SUBSCRIBE_HA_STATES = 38; const val BUTTON_COMMAND = 62
+    const val SUBSCRIBE_HA_SERVICES = 34; const val HA_SERVICE_RESP = 35; const val GET_TIME_REQ = 36; const val GET_TIME_RESP = 37
+    const val SUBSCRIBE_HA_STATES = 38; const val LIST_SERVICES = 41; const val EXECUTE_SERVICE = 42
+    const val BUTTON_COMMAND = 62
 }
 
 /** Un messaggio pronto da spedire: tipo e payload protobuf. */
@@ -94,6 +95,14 @@ class Pulsante(
     override fun descrizione() = Messaggio(Msg.LIST_BUTTON, base(ProtoWriter()).string(5, icona)
         .varint(7, categoria).string(8, deviceClass).toByteArray())
     override fun stato(): Messaggio? = null
+}
+
+/** Sensore di testo con un valore fisso, es. il nome dell'adattatore per ble_adv. */
+class SensoreTesto(objectId: String, nome: String, icona: String? = null, diagnostica: Boolean = false, val valore: String) :
+    Entita(objectId, nome, icona, diagnostica) {
+    override fun descrizione() = Messaggio(Msg.LIST_TEXT_SENSOR, base(ProtoWriter()).string(5, icona)
+        .varint(7, categoria).toByteArray())
+    override fun stato() = Messaggio(Msg.TEXT_SENSOR_STATE, ProtoWriter().fixed32(1, key).string(2, valore).toByteArray())
 }
 
 /**

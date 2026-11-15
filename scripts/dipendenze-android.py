@@ -103,6 +103,10 @@ def manifest_requirements(ha_version, path):
         if entry in seen:
             continue
         seen.add(entry)
+        # "pip:pacchetto": requisito di un'integrazione personalizzata (es. ble_adv), che non è nel wheel di HA
+        if entry.startswith("pip:"):
+            reqs.append((Requirement(entry[4:]), "integrazione personalizzata"))
+            continue
         # "dominio:pacchetto" prende dal manifest solo quel pacchetto, senza le dependencies
         domain, _, only = entry.partition(":")
         manifest = json.loads(wheel.read(f"homeassistant/components/{domain}/manifest.json"))

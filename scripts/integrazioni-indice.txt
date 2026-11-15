@@ -25,3 +25,6 @@ matter
 samsungtv
 webostv
 androidtv_remote
+# integrazioni personalizzate installate dall'app (scripts/integrazioni-personalizzate.txt):
+# "pip:pacchetto" per i loro requisiti nativi. ble_adv (FanLamp) usa pycryptodome per l'AES.
+pip:pycryptodome

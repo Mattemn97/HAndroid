@@ -2,7 +2,7 @@
 
 Generato da `scripts/dipendenze-android.py 2026.11.1 scripts/integrazioni-indice.txt` (arm64, Python 3.14). Queste integrazioni non sono nell'APK: HA scarica le loro librerie con pip quando le aggiungi. I pacchetti nativi qui sotto vanno compilati e pubblicati nell'indice dei wheel.
 
-Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
+Totale 158: 120 puri, 0 con wheel Android, **30 da compilare**, 8 solo sorgente.
 
 ## Da compilare con cibuildwheel
 
@@ -31,6 +31,7 @@ Totale 157: 120 puri, 0 con wheel Android, **29 da compilare**, 8 solo sorgente.
 | pillow | 13.0.0 | integrazione image_upload |
 | psutil | 7.2.2 | psutil-home-assistant |
 | pycares | 5.2.1 | aiodns |
+| pycryptodome | 4.4.0 | integrazione personalizzata |
 | pydantic-core | 2.50.1 | pydantic |
 | pymicro-vad | 1.0.1 | integrazione assist_pipeline |
 | pynacl | 1.6.2 | integrazione mobile_app |

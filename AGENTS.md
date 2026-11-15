@@ -32,9 +32,14 @@ adb logcat -s HAndroid python.stdout python.stderr
 - Solo arm64 (Xiaomi 12T). `app/python`, `jniLibs`, `python.zip` e `wheels/` sono generati e stanno fuori da git.
 - Ogni modifica aggiorna `docs/guida-sviluppo.md` (se cambia come si compila, prova o sviluppa) e aggiunge una voce a `docs/registro.md`. Il repo deve bastare a chi sviluppa l'app o un add-on.
 - Un cambio al formato degli add-on va in `docs/addon/README.md`, con una riga nello storico in fondo.
-- In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows.
+- In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows. Così però curl e adb non capiscono `/tmp/...`: passa i file temporanei da `cygpath -m`, e a tar con `-f -` (un `C:/...` per tar è un host remoto).
+- Per riavviare HA dal PC: `adb shell am force-stop it.handroid` e poi `adb shell monkey -p it.handroid -c android.intent.category.LAUNCHER 1` (MIUI ignora `am start` dopo un force-stop). Un kill normale di `:ha` il supervisor lo prende per uno stop voluto.
+- I `.pyc` nell'APK sono `unchecked-hash`: un `.py` copiato sul telefono non vale finché non cancelli il suo `.pyc` in `__pycache__`.
+- Su Android OpenSSL non ha certificati CA: `handroid_boot.py` imposta `SSL_CERT_FILE` a certifi. Un `CERTIFICATE_VERIFY_FAILED` in un'integrazione parte da lì.
+- Niente `custom_components` in `site-packages`: nasconde quella di HA. `handroid_boot.py` copia la nostra integrazione e la toglie.
 - `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.
-- Le integrazioni installate a runtime con pacchetti nativi vanno in `scripts/integrazioni-indice.txt` (tabella `docs/dipendenze-indice.md`).
+- Le integrazioni installate a runtime con pacchetti nativi vanno in `scripts/integrazioni-indice.txt` (tabella `docs/dipendenze-indice.md`); per quelle personalizzate, `pip:pacchetto`.
+- Le integrazioni personalizzate (Xiaomi Home, ble_adv) non vanno nell'APK: si installano con `scripts/installa-integrazione.sh`. La licenza di Xiaomi Home vieta di usarla per sviluppare app.
 - La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages` con un commit normale (niente push forzati).
 - Le versioni dei wheel seguono `package_constraints.txt` di HA (lo applica `dipendenze-android.py`): un wheel con un'altra versione per pip sul telefono non esiste.
 - Sul 12T senza SIM: installa con `adb push` in `/data/local/tmp` + `pm install -r`; `input` e `pm grant` sono bloccati.

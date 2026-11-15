@@ -9,6 +9,13 @@ import shutil
 import subprocess
 import sys
 
+# Android non ha i certificati CA dove li cerca OpenSSL: HA usa certifi, ma le integrazioni che
+# creano un contesto SSL proprio (es. Xiaomi Home) fallirebbero con CERTIFICATE_VERIFY_FAILED.
+# Va fatto prima di importare HA: aiohttp prepara il suo contesto SSL già all'import.
+import certifi
+
+os.environ.setdefault("SSL_CERT_FILE", certifi.where())
+
 import aiodns
 import bluetooth_adapters
 import bluetooth_adapters.systems
@@ -32,9 +39,14 @@ _STATO = os.path.join(_FILES, "stato.txt")
 
 # integrazione "handroid" (gestione degli add-on, M3): si copia a ogni avvio, così segue l'APK
 _CUSTOM = os.path.join(sys.argv[sys.argv.index("--config") + 1], "custom_components", "handroid")
-shutil.rmtree(_CUSTOM, ignore_errors=True)
-shutil.copytree(os.path.join(os.path.dirname(__file__), "custom_components", "handroid"), _CUSTOM,
-                ignore=shutil.ignore_patterns("__pycache__"))
+_CUSTOM_APK = os.path.join(os.path.dirname(__file__), "custom_components")
+# Poi la copia nell'APK si toglie: in site-packages, prima della cartella di HA in sys.path, nasconde
+# ha-config/custom_components e HA non vede le integrazioni personalizzate (Xiaomi Home, ble_adv).
+# Torna a ogni aggiornamento, quando HaService estrae di nuovo python.zip.
+if os.path.isdir(_CUSTOM_APK):
+    shutil.rmtree(_CUSTOM, ignore_errors=True)
+    shutil.copytree(os.path.join(_CUSTOM_APK, "handroid"), _CUSTOM, ignore=shutil.ignore_patterns("__pycache__"))
+    shutil.rmtree(_CUSTOM_APK, ignore_errors=True)
 
 
 def _read(name):

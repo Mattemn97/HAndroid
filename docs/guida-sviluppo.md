@@ -198,7 +198,10 @@ Per provare una modifica a un file Python senza ricostruire l'APK:
 ```bash
 adb push app/src/main/python/handroid_boot.py /data/local/tmp/
 adb shell run-as it.handroid cp /data/local/tmp/handroid_boot.py files/python/site-packages/
+# i .pyc sono "unchecked-hash": Python non guarda il sorgente, quello vecchio va cancellato
+adb shell run-as it.handroid rm files/python/site-packages/__pycache__/handroid_boot.cpython-314.pyc
 adb shell am force-stop it.handroid
+adb shell monkey -p it.handroid -c android.intent.category.LAUNCHER 1   # dopo force-stop MIUI ignora am start
 ```
 
 La schermata dell'app mostra l'ultimo passo dell'avvio, da quanti secondi è lì e se l'interfaccia risponde: lo scrivono `HaService` (estrazione) e `handroid_boot.py` (messaggi di avvio di HA) in `files/stato.txt`. Il primo avvio dopo un'installazione estrae Python (circa 30 secondi), poi HA impiega 1-2 minuti a partire sull'emulatore. Gli errori `Setup failed for ...` di alcune integrazioni sono attesi: vedi [Problemi noti](#problemi-noti). Poi dal telefono personale apri l'indirizzo mostrato nell'app (`http://<ip>:8123`).
@@ -276,15 +279,25 @@ Tutto parte con HA, nel processo `:ha`:
 | --- | --- | --- |
 | Sensori e comandi del telefono (batteria, luce, prossimità, Wi-Fi, torcia, riavvio) | dispositivo ESPHome "HAndroid", trovato da zeroconf o aggiunto a mano con `127.0.0.1`, porta `6053`, senza chiave | [0004](specs/0004-dispositivo-esphome.md) |
 | Bluetooth del telefono (termometri, sensori BLE) | proxy Bluetooth dello stesso dispositivo ESPHome; serve il permesso "Dispositivi nelle vicinanze" | [0005](specs/0005-proxy-bluetooth.md) |
+| Lampade e ventilatori a annunci BLE (FanLamp Pro, LampSmart) | trasmettitore `ble_adv_proxy` dello stesso dispositivo, per l'integrazione personalizzata ble_adv (adattatore `esp/handroid`); serve il permesso "Dispositivi nelle vicinanze" | [0008](specs/0008-trasmettitore-ble-adv.md) |
 | Chiavette Zigbee e Z-Wave via USB-OTG | socket `socket://127.0.0.1:6638` (Zigbee) o `6639` (Z-Wave) da scrivere in ZHA o Z-Wave JS; stato in `ha-config/handroid_usb_stato.json` | [0003](specs/0003-ponte-usb-seriale.md) |
 
 `configuration.yaml` iniziale (`app/src/main/assets`) è `default_config` senza cloud (grpcio), dhcp (socket raw), stream e go2rtc (FFmpeg): con `default_config` intero HA non caricherebbe nemmeno il resto, perché basta una dipendenza fallita. `HaService` lo riscrive solo se manca o se è ancora quello della M0.
 
 Niente sezione `homeassistant:` nel file: con quella HA blocca nell'interfaccia nome, posizione e URL (Impostazioni → Sistema → Rete). `HaService` la toglie dai file scritti dalla 0.3.0.
 
-**Accesso da remoto.** Nabu Casa non funziona ancora (manca grpcio). La strada più semplice è [Tailscale](https://tailscale.com/download/android): l'app sul telefono server e sul telefono personale, stesso account; poi nell'app Companion l'indirizzo è `http://<IP Tailscale del server>:8123`, da scrivere anche in Impostazioni → Sistema → Rete → URL "Internet". Niente porte aperte sul router.
+**Accesso da remoto.** Nabu Casa non funziona ancora (manca grpcio). La strada più semplice è [Tailscale](https://tailscale.com/download/android): l'app sul telefono server e sul telefono personale, stesso account; poi nell'app Companion l'indirizzo è `http://<IP Tailscale del server>:8123`, da scrivere anche in Impostazioni → Sistema → Rete → URL "Internet". Niente porte aperte sul router. Tutorial passo passo per chi usa l'app: [accesso-remoto.md](accesso-remoto.md).
 
 `handroid_boot.py` rende tollerante un requisito mancante di una *after_dependency* (es. cloud per mobile_app): l'integrazione parte lo stesso, con un avviso nel log.
+
+**Integrazioni personalizzate** (quelle che di solito si installano con HACS): `scripts/installa-integrazione.sh <proprietario/repo> [versione]` prende il rilascio da GitHub, lo copia in `ha-config/custom_components/<dominio>` e riavvia HA. Poi l'integrazione si aggiunge da Impostazioni → Dispositivi e servizi. Già installate sul 12T:
+
+```bash
+scripts/installa-integrazione.sh XiaoMi/ha_xiaomi_home   # Xiaomi Home: login con l'account Xiaomi
+scripts/installa-integrazione.sh NicoIIT/ha-ble-adv      # ble_adv: lampade FanLamp, spec 0008
+```
+
+Non stanno nell'APK: la licenza di Xiaomi Home non permette di ridistribuirla dentro un'app. Usa `run-as`, quindi serve l'APK di debug. Se un'integrazione chiede un pacchetto nativo che manca nell'indice, aggiungilo a `scripts/integrazioni-indice.txt` come `pip:pacchetto` e compilalo (vedi [Lavorare sulle dipendenze native](#lavorare-sulle-dipendenze-native)).
 
 Prova rapida del dispositivo ESPHome dal PC, con lo stesso client di HA:
 

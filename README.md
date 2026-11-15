@@ -132,7 +132,7 @@ Conviene aggiungere i dispositivi uno alla volta e fare un backup dopo ogni pass
 
 - **Server (master):** il 12T, fermo in casa e attaccato alla corrente.
 - **Client (slave):** l'app ufficiale **Home Assistant** (Companion) sul telefono personale, puntata a `http://IP-DEL-12T:8123`. L'app trasforma anche il telefono personale in un sensore (posizione, presenza, batteria).
-- **Da fuori casa:** usa **Tailscale** (gratis) oppure Home Assistant Cloud (Nabu Casa, a pagamento).
+- **Da fuori casa:** usa **Tailscale** (gratis) oppure Home Assistant Cloud (Nabu Casa, a pagamento). Passo passo per HAndroid: [docs/accesso-remoto.md](docs/accesso-remoto.md).
 
 ## Batteria
 

@@ -143,6 +143,7 @@ class MainActivity : Activity() {
             if (Build.VERSION.SDK_INT >= 31) {
                 add(Manifest.permission.BLUETOOTH_SCAN)
                 add(Manifest.permission.BLUETOOTH_CONNECT)
+                add(Manifest.permission.BLUETOOTH_ADVERTISE)
             } else {
                 add(Manifest.permission.ACCESS_FINE_LOCATION)  // prima di Android 12 la scansione BLE la richiede
             }

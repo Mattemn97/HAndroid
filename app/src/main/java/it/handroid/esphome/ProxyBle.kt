@@ -43,6 +43,8 @@ class ProxyBle private constructor(private val ctx: Context, private val adapter
     private val dispositivi = HashMap<Long, Dispositivo>()
     private var scansione = false
     private var statoScanner = MsgBle.STATO_STOPPED
+    /** Riceve ogni annuncio (MAC, dati), es. il trasmettitore di ble_adv per i suoi eventi. */
+    @Volatile var grezzi: ((String, ByteArray) -> Unit)? = null
 
     override fun deviceInfo(w: ProtoWriter) { w.uint(15, MsgBle.FEATURES).string(18, mac) }
 
@@ -97,7 +99,10 @@ class ProxyBle private constructor(private val ctx: Context, private val adapter
     // --- Scansione ---
 
     private val callbackScan = object : ScanCallback() {
-        override fun onScanResult(tipo: Int, r: ScanResult) { lotto.aggiungi(annuncio(r))?.let(::aTutti) }
+        override fun onScanResult(tipo: Int, r: ScanResult) {
+            lotto.aggiungi(annuncio(r))?.let(::aTutti)
+            grezzi?.let { g -> r.scanRecord?.bytes?.let { g(r.device.address, CodecBle.taglia(it.copyOf(minOf(it.size, BleAdv.MAX_ANNUNCIO)))) } }
+        }
         override fun onBatchScanResults(l: MutableList<ScanResult>) = l.forEach { onScanResult(0, it) }
         override fun onScanFailed(e: Int) { Log.w(TAG, "Scansione BLE fallita: $e"); scansione = false; statoCambiato(MsgBle.STATO_FAILED) }
     }

@@ -11,6 +11,8 @@ Provate sul Xiaomi 12T (Android 14, MIUI), HAndroid 0.3.0-m3, Home Assistant 202
 | MQTT | funziona | con l'add-on Broker MQTT sul telefono, anche il discovery MQTT |
 | Add-on HAndroid | funziona | stato e accensione degli add-on da HA |
 | mobile_app (app Companion) | si carica | da provare con l'app Companion su un altro telefono |
+| ble_adv (FanLamp Pro, LampSmart) | da provare | personalizzata, `installa-integrazione.sh`; il telefono trasmette gli annunci (spec 0008), manca la prova con la lampada |
+| Xiaomi Home (ufficiale di Xiaomi) | installata | personalizzata, `installa-integrazione.sh`; requisiti installati con pip sul telefono, manca il login Xiaomi |
 | hardware | funziona | psutil compilato per Android |
 | Bluetooth | si carica | nessun adattatore diretto: i sensori BLE passano dal proxy ESPHome, da provare con un sensore vero |
 | USB | si carica | il ponte per chiavette Zigbee/Z-Wave è da provare con una chiavetta |

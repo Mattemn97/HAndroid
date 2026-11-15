@@ -26,6 +26,8 @@ interface Modulo {
     /** `true` se il messaggio è stato gestito. */
     fun gestisci(conn: Connessione, tipo: Int, payload: ByteArray): Boolean
     fun deviceInfo(w: ProtoWriter) {}
+    /** Descrizioni in più per ListEntities, es. i servizi (azioni) del dispositivo. */
+    fun descrizioni(): List<Messaggio> = emptyList()
     fun chiusa(conn: Connessione) {}
 }
 
@@ -33,6 +35,8 @@ interface Modulo {
 class Connessione(private val socket: Socket) {
     private val out: OutputStream = socket.getOutputStream()
     @Volatile var statiAttivi = false
+    /** HA ha chiesto azioni ed eventi (SubscribeHomeassistantServices). */
+    @Volatile var serviziHa = false
 
     fun invia(m: Messaggio) = invia(m.tipo, m.payload)
     fun invia(tipo: Int, payload: ByteArray = ByteArray(0)) {
@@ -108,6 +112,7 @@ class ApiServer(
             Msg.DEVICE_INFO_REQ -> conn.invia(Msg.DEVICE_INFO_RESP, deviceInfo())
             Msg.LIST_ENTITIES_REQ -> {
                 registro.entita.forEach { conn.invia(it.descrizione()) }
+                moduli.forEach { m -> m.descrizioni().forEach { conn.invia(it) } }
                 conn.invia(Msg.LIST_DONE)
             }
             Msg.SUBSCRIBE_STATES -> {
@@ -124,8 +129,10 @@ class ApiServer(
             }
             Msg.GET_TIME_REQ -> conn.invia(Msg.GET_TIME_RESP,
                 ProtoWriter().fixed32(1, (System.currentTimeMillis() / 1000).toInt()).toByteArray())
-            // Log, servizi e stati di HA: niente da mandare, ma la sottoscrizione è valida.
-            Msg.SUBSCRIBE_LOGS, Msg.SUBSCRIBE_HA_SERVICES, Msg.SUBSCRIBE_HA_STATES -> {}
+            // Gli eventi verso HA (ble_adv) passano da qui.
+            Msg.SUBSCRIBE_HA_SERVICES -> conn.serviziHa = true
+            // Log e stati di HA: niente da mandare, ma la sottoscrizione è valida.
+            Msg.SUBSCRIBE_LOGS, Msg.SUBSCRIBE_HA_STATES -> {}
             else -> if (moduli.none { it.gestisci(conn, tipo, payload) }) Log.d(TAG, "Messaggio $tipo ignorato")
         }
         return true

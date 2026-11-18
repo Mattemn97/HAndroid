@@ -248,6 +248,24 @@ async def _carica_config_con_remoto(self):
 
 ha_core_config.Config.async_load = _carica_config_con_remoto
 
+# Cloudflare Tunnel (Tunnel.kt): cloudflared inoltra le richieste da 127.0.0.1 con X-Forwarded-For, che HA
+# rifiuta (400) se il proxy non è fidato. Con un token salvato si fida di localhost, a meno che
+# configuration.yaml non dica già qualcosa sui proxy.
+if _read("cloudflare-token.txt").strip():
+    import ipaddress
+    import homeassistant.components.http as ha_http
+
+    _carica_http = ha_http.async_load_config
+
+    async def _carica_http_con_tunnel(hass, config):
+        conf = await _carica_http(hass, config)
+        if ha_http.CONF_USE_X_FORWARDED_FOR not in conf:
+            conf = {**conf, ha_http.CONF_USE_X_FORWARDED_FOR: True,
+                    ha_http.CONF_TRUSTED_PROXIES: [ipaddress.ip_network("127.0.0.1"), ipaddress.ip_network("::1")]}
+        return conf
+
+    ha_http.async_load_config = _carica_http_con_tunnel
+
 # Batteria: il recorder scrive il database ogni 5 s, e ogni scrittura sveglia CPU e memoria flash.
 # Ogni 30 s basta (si perdono al massimo 30 s di storico in un crash). commit_interval in
 # configuration.yaml vince comunque. Lo schema di HA è già compilato (cambiarne il default non ha

@@ -3,11 +3,13 @@ package it.handroid
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.IBinder
@@ -42,6 +44,11 @@ class HaService : Service() {
             stop("Home Assistant fermato dall'app")
             return START_NOT_STICKY
         }
+        // con HA già in funzione si riparte da capo; altrimenti è un avvio normale
+        if (intent?.action == ACTION_RESTART && started) {
+            restart("Riavvio dall'app", 1000)
+            return START_NOT_STICKY
+        }
         if (!started) {
             started = true
             Supervisor.setAutostart(this, true)
@@ -54,6 +61,7 @@ class HaService : Service() {
             UsbPonte.avvia(this)
             // add-on (M3): API locale su 127.0.0.1:8099 e avvio automatico, nei processi :addonN
             it.handroid.addon.AddonManager.avvia(this)
+            Tunnel.avvia(this)
             thread(name = "hass") { runAndSupervise() }
             thread(name = "watchdog", isDaemon = true) { watchdog() }
         }
@@ -226,11 +234,23 @@ class HaService : Service() {
         }
         val builder = if (Build.VERSION.SDK_INT >= 26) Notification.Builder(this, CHANNEL)
         else @Suppress("DEPRECATION") Notification.Builder(this)
+        val flags = PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        fun comando(azione: String, codice: Int) = Intent(this, HaService::class.java).setAction(azione).let {
+            if (Build.VERSION.SDK_INT >= 26) PendingIntent.getForegroundService(this, codice, it, flags)
+            else PendingIntent.getService(this, codice, it, flags)
+        }
+        val apri = PendingIntent.getActivity(this, 0,
+            Intent(Intent.ACTION_VIEW, Uri.parse("http://127.0.0.1:8123")), flags)
+        val app = PendingIntent.getActivity(this, 1, Intent(this, MainActivity::class.java), flags)
         return builder
-            .setContentTitle("Home Assistant attivo")
+            .setContentTitle(if (Supervisor.recoveryMode(this)) "Home Assistant in modalità di ripristino" else "Home Assistant attivo")
             .setContentText("Porta 8123")
             .setSmallIcon(android.R.drawable.stat_sys_upload_done)
             .setOngoing(true)
+            .setContentIntent(app)
+            .addAction(Notification.Action.Builder(null, "Apri", apri).build())
+            .addAction(Notification.Action.Builder(null, "Riavvia", comando(ACTION_RESTART, 2)).build())
+            .addAction(Notification.Action.Builder(null, "Ferma", comando(ACTION_STOP, 3)).build())
             .build()
     }
 
@@ -238,6 +258,7 @@ class HaService : Service() {
         private const val TAG = "HAndroid"
         private const val CHANNEL = "server"
         private const val ACTION_STOP = "it.handroid.STOP"
+        private const val ACTION_RESTART = "it.handroid.RESTART"
         private const val RECHECK_USB = "ricontrolla_usb"
 
         /** Testo che handroid_boot.py scrive quando HA ha finito di avviarsi. */
@@ -262,6 +283,12 @@ class HaService : Service() {
         /** [recheckUsb]: una chiavetta è appena stata collegata (da [UsbAttivita]). */
         fun start(context: Context, recheckUsb: Boolean = false) {
             val intent = Intent(context, HaService::class.java).putExtra(RECHECK_USB, recheckUsb)
+            if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
+        }
+
+        /** Riavvia HA (lo avvia, se è fermo). */
+        fun restart(context: Context) {
+            val intent = Intent(context, HaService::class.java).setAction(ACTION_RESTART)
             if (Build.VERSION.SDK_INT >= 26) context.startForegroundService(intent) else context.startService(intent)
         }
 

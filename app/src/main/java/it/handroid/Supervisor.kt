@@ -58,8 +58,16 @@ object Supervisor {
         crashFile(context).delete()
     }
 
-    /** Troppi crash di fila: HA parte con --recovery-mode (solo le integrazioni essenziali). */
+    private fun forcedRecoveryFile(context: Context) = File(context.filesDir, "ripristino")
+
+    /** Modalità di ripristino scelta dall'app, finché non la si toglie (anche senza crash). */
+    fun setForcedRecovery(context: Context, enabled: Boolean) {
+        if (enabled) forcedRecoveryFile(context).writeText("1") else { forcedRecoveryFile(context).delete(); resetCrashes(context) }
+    }
+
+    /** Troppi crash di fila, o scelta dall'app: HA parte con --recovery-mode (solo le integrazioni essenziali). */
     fun recoveryMode(context: Context): Boolean {
+        if (forcedRecoveryFile(context).exists()) return true
         val now = System.currentTimeMillis()
         return crashTimes(context).count { now - it < CRASH_WINDOW_MS } >= MAX_CRASHES
     }

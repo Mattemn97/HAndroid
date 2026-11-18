@@ -310,6 +310,18 @@ Plancia **Telefono** nella barra laterale: `handroid_boot.py` la crea al primo a
 
 ## Server sempre acceso
 
+Comandi dell'app (`MainActivity.kt`), divisi in sezioni:
+
+| Sezione | Comandi |
+| --- | --- |
+| Home Assistant | Apri l'interfaccia, Avvia, Riavvia, Ferma |
+| Da fuori casa | Cloudflare Tunnel ([spec 0009](specs/0009-accesso-cloudflare-tunnel.md)), Tailscale ([accesso-remoto.md](accesso-remoto.md)) |
+| Problemi | Mostra / Condividi il log (logcat dell'app e coda di `home-assistant.log`, senza PC), Riavvia in / Esci dalla modalità di ripristino (file `ripristino`) |
+| Manutenzione | esclusione dall'ottimizzazione batteria, backup in Download, Spazio occupato, Svuota la cache (pip e app), Cerca aggiornamenti |
+| Avanzate | Dispositivo ESPHome visibile agli altri HA della rete (file `esphome-lan`), Azzera la configurazione (due conferme, i backup restano) |
+
+Gli stessi comandi principali stanno anche nella notifica (Apri, Riavvia, Ferma) e nel riquadro **Home Assistant** delle impostazioni rapide (`HaTile.kt`: acceso = avvio automatico attivo). Tutto lo stato condiviso con `:ha` passa da file in `files/`.
+
 Il supervisor (`Supervisor.kt` e il watchdog in `HaService.kt`) tiene HA acceso:
 
 | Evento | Cosa fa |
@@ -320,6 +332,7 @@ Il supervisor (`Supervisor.kt` e il watchdog in `HaService.kt`) tiene HA acceso:
 | Crash, o 3 controlli falliti (uno ogni 30 secondi) | riparte dopo 10 secondi |
 | Processo ucciso di colpo (sistema, crash nativo) | riparte entro 2 minuti: il watchdog sposta avanti una sveglia ogni 30 secondi, e se il processo muore la sveglia scatta. Conta come crash (file `in-corso` rimasto) |
 | 3 crash in 15 minuti | riparte con `--recovery-mode` |
+| "Riavvia in modalità di ripristino" nell'app | `--recovery-mode` finché non premi "Esci dalla modalità di ripristino" |
 
 Il supervisor gira nello stesso processo di HA: senza la sveglia di sicurezza un `kill -9` lo lascerebbe fermo, perché MIUI ignora `START_STICKY`. Il watchdog parte quando `stato.txt` dice "Home Assistant pronto"; dopo, `handroid_boot.py` non lo cambia più.
 
@@ -382,6 +395,7 @@ Gradle su Windows, se manca qualcosa:
 | cffi non trova libffi | cffi, cryptography, pynacl e pycares non si compilano | libffi statica di BeeWare in `~/android-deps` |
 | grpcio: la sua BoringSSL va in conflitto con gli header OpenSSL di CPython | grpcio non si compila | `GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1` |
 | grpcio: `setup.py` sceglie la config di c-ares solo se `"linux" in sys.platform` | `ares_config.h` non trovato | il `case` di `compila-wheel-android.sh` tratta `android` come `linux` |
+| cloudflared ufficiale cerca i DNS in `/etc/resolv.conf` | il tunnel non si collega | compilato per `GOOS=android` con cgo in `prepara-wsl.sh` |
 | av vuole FFmpeg 8 condivisa | telecamere e stream non partono | FFmpeg da `prepara-wsl.sh`; le `.so` e `ffmpeg` (come `libffmpeg.so`) vanno in jniLibs, `handroid_boot.py` mette `ffmpeg` nel PATH |
 | pillow, psutil | non si compilano | rinviati, vedi `scripts/android-rinviati.txt` |
 | `Os.setenv` da Kotlin non arriva né al codice C né a `os.environ` | Python non trova site-packages; HOME, TMPDIR e DNS mancanti | percorsi come argomento JNI, il resto via file in `files/` |

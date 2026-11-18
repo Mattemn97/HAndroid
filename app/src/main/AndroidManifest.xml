@@ -77,6 +77,18 @@
             </intent-filter>
         </receiver>
 
+        <!-- riquadro "Home Assistant" nelle impostazioni rapide (tendina): avvia o ferma HA -->
+        <service
+            android:name=".HaTile"
+            android:exported="true"
+            android:icon="@android:drawable/stat_sys_upload_done"
+            android:label="Home Assistant"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
         <!-- Processo separato: Python non si può reinizializzare, quindi a ogni riavvio di HA
              il processo muore e riparte pulito, senza toccare l'interfaccia. -->
         <service

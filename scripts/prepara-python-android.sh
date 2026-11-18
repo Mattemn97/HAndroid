@@ -47,6 +47,7 @@ cp app/python/prefix/lib/libpython3*.so app/python/prefix/lib/*_python.so app/sr
 FFMPEG_LIB="$HOME/android-deps/aarch64-linux-android"
 cp "$FFMPEG_LIB"/lib/lib{av,sw}*.so app/src/main/jniLibs/arm64-v8a/
 cp "$FFMPEG_LIB/bin/ffmpeg" app/src/main/jniLibs/arm64-v8a/libffmpeg.so
+cp "$FFMPEG_LIB/bin/cloudflared" app/src/main/jniLibs/arm64-v8a/libcloudflared.so  # anche questo da prepara-wsl.sh
 
 echo "==> Lanciatore python (libhpython.so)"
 # $ORIGIN: l'eseguibile trova libpython3.14.so nella sua stessa cartella

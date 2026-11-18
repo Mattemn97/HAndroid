@@ -2,6 +2,31 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-18 · 0.5.0: telecamere, Cloud, accesso remoto gratis, comandi dell'app
+
+**Risultato:** versione 0.5.0. Riassunto per chi aggiorna (dettagli nelle due voci qui sotto):
+
+- **Telecamere e stream:** FFmpeg 8.1 e av inclusi, con il comando `ffmpeg` per istantanee e integrazione ffmpeg.
+- **Cloud di Nabu Casa:** grpcio incluso.
+- **Da fuori casa senza costi:** Cloudflare Tunnel integrato (incolli il token nell'app, serve un dominio) oppure Tailscale con il pulsante dedicato. Guida: [accesso-remoto.md](accesso-remoto.md).
+- **Comandi dell'app:** Riavvia; log da vedere e condividere senza PC; modalità di ripristino a mano; spazio occupato e pulizia della cache; ESPHome visibile in rete; azzeramento della configurazione con doppia conferma. Apri, Riavvia e Ferma anche nella notifica, più un riquadro nelle impostazioni rapide.
+- **Plancia Telefono** con batteria, consumi, RAM, memoria e sensori; nuovi sensori di potenza, corrente, tensione, RAM e memoria.
+- **Batteria:** scansione Bluetooth e salvataggi del database meno frequenti a schermo spento.
+- APK 165 MB circa più cloudflared (circa 12 MB compressi).
+
+Da provare sul 12T: consumo, telecamere, Cloud, tunnel, comandi nuovi.
+
+## 2026-11-18 · Comandi dell'app e Cloudflare Tunnel
+
+**Fatto**
+- `MainActivity.kt` in sezioni: Home Assistant (con Riavvia), Da fuori casa, Problemi (log, modalità di ripristino), Manutenzione (spazio, cache), Avanzate (ESPHome in rete, azzeramento). Azioni nella notifica e riquadro `HaTile` nelle impostazioni rapide.
+- `Tunnel.kt` (spec 0009): cloudflared compilato per Android (cgo, resolver di sistema) e avviato dal processo `:ha` con il token in `TUNNEL_TOKEN`. `handroid_boot.py` fa fidare HA del proxy su localhost solo con un token salvato.
+- `Strumenti.kt`: log (logcat dell'app più coda di `home-assistant.log`), spazio, cache, azzeramento. `EspHomeLan`: l'opzione "lan" del server ESPHome passa da un file in `files/`.
+
+**Provato**
+- Test unitari: 44 su 44 (token di Cloudflare, coda dei log, formato delle dimensioni). Con HA 2026.11.1: formato dei proxy fidati uguale a quello dello schema http.
+- Non provato: cloudflared non si può eseguire sul PC (binario Android arm64), né l'app sul telefono.
+
 ## 2026-11-18 · Batteria, telecamere, Cloud, accesso remoto, plancia Telefono
 
 **Risultato:** codice e script pronti per la 0.5.0, non ancora provati sul 12T (telefono non collegato).

@@ -78,6 +78,21 @@ if [ ! -f "$DEPS/lib/libavformat.so" ]; then
   rm -rf /tmp/ffmpeg
 fi
 
+# cloudflared per l'accesso da fuori casa (Tunnel.kt). Compilato per GOOS=android con cgo: quello ufficiale
+# per Linux cerca i DNS in /etc/resolv.conf, che su Android non c'è, mentre così usa il resolver di sistema.
+if [ ! -f "$DEPS/bin/cloudflared" ]; then
+  GO=1.27.4; CLOUDFLARED=2026.11.1
+  TC="$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin"
+  if [ ! -x "$HOME/go-sdk/bin/go" ]; then
+    mkdir -p "$HOME/go-sdk"
+    curl -fsSL "https://go.dev/dl/go$GO.linux-amd64.tar.gz" | tar xz -C "$HOME/go-sdk" --strip-components=1
+  fi
+  rm -rf /tmp/cloudflared && git clone -q --depth 1 --branch "$CLOUDFLARED" https://github.com/cloudflare/cloudflared /tmp/cloudflared
+  (cd /tmp/cloudflared && GOTOOLCHAIN=local GOOS=android GOARCH=arm64 CGO_ENABLED=1 CC="$TC/aarch64-linux-android24-clang" \
+    "$HOME/go-sdk/bin/go" build -trimpath -ldflags "-s -w -X main.Version=$CLOUDFLARED" -o "$DEPS/bin/cloudflared" ./cmd/cloudflared)
+  rm -rf /tmp/cloudflared
+fi
+
 # zlib c'è già nell'NDK: collegamenti in $DEPS perché pillow la cerca con ZLIB_ROOT
 SYSROOT="$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr"
 ln -sf "$SYSROOT/include/zlib.h" "$SYSROOT/include/zconf.h" "$DEPS/include/"

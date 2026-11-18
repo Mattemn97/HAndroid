@@ -59,6 +59,25 @@ if [ ! -f "$DEPS/lib/libsodium.a" ]; then
   rm -rf /tmp/libsodium
 fi
 
+# FFmpeg condivisa per av (telecamere e stream di HA) e l'eseguibile ffmpeg (istantanee, integrazione
+# ffmpeg). --target-os=android dà nomi senza versione (libavcodec.so): l'APK li porta in jniLibs, dove
+# il linker di Android li trova come libpython; ffmpeg le trova con LD_LIBRARY_PATH, impostato da
+# handroid_boot.py per i processi figli. Gli add-on GPL (x264...) restano fuori: licenza LGPL.
+if [ ! -f "$DEPS/lib/libavformat.so" ]; then
+  FFMPEG=8.1.3
+  TC="$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin"
+  rm -rf /tmp/ffmpeg && mkdir -p /tmp/ffmpeg
+  curl -fsSL "https://ffmpeg.org/releases/ffmpeg-$FFMPEG.tar.xz" | tar xJ -C /tmp/ffmpeg
+  (cd /tmp/ffmpeg/ffmpeg-$FFMPEG \
+    && ./configure --prefix="$DEPS" --target-os=android --arch=aarch64 --enable-cross-compile \
+         --cc="$TC/aarch64-linux-android24-clang" \
+         --ar="$TC/llvm-ar" --ranlib="$TC/llvm-ranlib" --nm="$TC/llvm-nm" --strip="$TC/llvm-strip" \
+         --enable-shared --disable-static --enable-pic --disable-doc --disable-ffplay --disable-ffprobe \
+         --disable-debug >/dev/null \
+    && make -j"$(nproc)" >/dev/null && make install >/dev/null)
+  rm -rf /tmp/ffmpeg
+fi
+
 # zlib c'è già nell'NDK: collegamenti in $DEPS perché pillow la cerca con ZLIB_ROOT
 SYSROOT="$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr"
 ln -sf "$SYSROOT/include/zlib.h" "$SYSROOT/include/zconf.h" "$DEPS/include/"
@@ -72,6 +91,7 @@ for l in rt pthread; do
   [ -f "$DEPS/lib/lib$l.a" ] || "$SDK/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar" rc "$DEPS/lib/lib$l.a"
 done
 cp "$DEPS"/lib/*.a "$SYSLIB/"
+cp "$DEPS"/lib/lib{av,sw}*.so "$SYSLIB/"  # FFmpeg, per collegare av
 
 echo "==> Python 3.14 e cibuildwheel"
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh

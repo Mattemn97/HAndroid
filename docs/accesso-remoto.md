@@ -2,7 +2,7 @@
 
 Passo passo per aprire HAndroid quando non sei sulla rete di casa, senza aprire porte sul router. Si usa [Tailscale](https://tailscale.com): una rete privata tra i tuoi dispositivi, gratuita per uso personale (fino a 100 dispositivi).
 
-Il cloud di Nabu Casa non funziona ancora su HAndroid: serve grpcio, che non è compilato per Android.
+In alternativa c'è il cloud di Nabu Casa (a pagamento, si attiva da Impostazioni → Home Assistant Cloud): dalla 0.5.0 HAndroid include grpcio, che gli serve.
 
 ## Cosa serve
 
@@ -19,6 +19,8 @@ Il cloud di Nabu Casa non funziona ancora su HAndroid: serve grpcio, che non è 
 5. Su MIUI: Impostazioni → App → Tailscale → **Avvio automatico** attivo e **Risparmio batteria: nessuna restrizione**.
 6. In Tailscale, sotto il nome del telefono, c'è il suo indirizzo: `100.x.y.z`. Annotalo.
 
+Scorciatoia: in HAndroid tocca **Usa da fuori casa**. Se Tailscale manca ti porta al download, se è spento lo apre, se è acceso ti fa condividere l'indirizzo (es. su WhatsApp verso il telefono personale). La schermata dell'app mostra sempre l'indirizzo alla riga "Da fuori casa".
+
 ## 2. Tailscale sul telefono personale
 
 1. Installa Tailscale dal Play Store (o dall'App Store) ed entra con **lo stesso account**.
@@ -26,6 +28,8 @@ Il cloud di Nabu Casa non funziona ancora su HAndroid: serve grpcio, che non è 
 3. Prova: con il Wi-Fi spento (solo dati mobili) e Tailscale acceso, apri `http://100.x.y.z:8123` nel browser. Deve comparire HA.
 
 ## 3. Indirizzi in Home Assistant
+
+Dalla 0.5.0 non serve: se l'URL Internet è vuoto, HAndroid ci scrive da solo l'indirizzo Tailscale al successivo avvio di HA (riavvialo dopo aver acceso Tailscale). Un URL scritto da te non viene toccato. A mano:
 
 1. In HA: Impostazioni → Sistema → **Rete**.
 2. **URL Internet**: scrivi `http://100.x.y.z:8123` (togli la spunta "Usa Home Assistant Cloud" se c'è).

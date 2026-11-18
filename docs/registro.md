@@ -2,6 +2,25 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-18 · Batteria, telecamere, Cloud, accesso remoto, plancia Telefono
+
+**Risultato:** codice e script pronti per la 0.5.0, non ancora provati sul 12T (telefono non collegato).
+
+**Fatto**
+- Batteria: a schermo spento la scansione BLE passa da LOW_LATENCY a BALANCED e i lotti a HA partono ogni secondo invece che ogni 100 ms (`ProxyBle.kt`). Il recorder salva ogni 30 s invece che ogni 5 (`handroid_boot.py` avvolge lo schema: cambiare il default del marker non basta, lo schema è già compilato).
+- grpcio 1.83.1 compilato: `setup.py` tratta `android` come `linux`, senza `getservbyport_r` e con `-llog`. Sblocca il Cloud di Nabu Casa.
+- FFmpeg 8.1.3 condivisa (`prepara-wsl.sh`, nomi senza versione con `--target-os=android`) in jniLibs, più `ffmpeg` come `libffmpeg.so` nel PATH di HA. av compilato contro di essa.
+- Accesso remoto: pulsante **Usa da fuori casa** (scarica, apre o condivide Tailscale); l'indirizzo 100.x va in `url-remoto.txt` e diventa l'URL Internet di HA se è vuoto.
+- Nuovi sensori: potenza, corrente, tensione della batteria, RAM e memoria libere. Plancia **Telefono** creata al primo avvio.
+- APK più leggero: niente cartelle `tests` dei pacchetti, `.so` ripulite dai simboli (circa 24 MB in meno sul telefono, che compensano FFmpeg, grpcio e av: APK 165 MB, 403 MB una volta estratto).
+
+**Provato**
+- Test unitari: 39 su 39. Con HA 2026.11.1 in un venv Linux: commit_interval 30 di default (2 se scritto in configurazione), URL Internet impostato solo se vuoto, plancia caricata da HA e non duplicata.
+
+**Ancora aperto**
+- Prova sul 12T: consumo prima/dopo (`adb shell dumpsys batterystats`), import di grpcio e av, una telecamera RTSP, segno della corrente su MIUI.
+- grpcio e av vanno pubblicati nell'indice online con `PUBBLICA=1 scripts/pubblica-indice.sh`.
+
 ## 2026-11-15 · 0.4.0: lampade FanLamp, integrazioni personalizzate, accesso remoto
 
 **Risultato:** versione 0.4.0 con il trasmettitore BLE per ble_adv, le correzioni per le integrazioni personalizzate (Xiaomi Home funziona sul 12T) e il tutorial [accesso-remoto.md](accesso-remoto.md) per usare HA da fuori casa con Tailscale. Dettagli nella voce qui sotto.

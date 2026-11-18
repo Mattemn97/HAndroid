@@ -23,6 +23,11 @@
     <uses-feature android:name="android.hardware.bluetooth_le" android:required="false" />
     <uses-feature android:name="android.hardware.usb.host" android:required="false" />
 
+    <!-- per aprire Tailscale da "Usa da fuori casa" (visibilità dei pacchetti, Android 11+) -->
+    <queries>
+        <package android:name="com.tailscale.ipn" />
+    </queries>
+
     <application
         android:label="HAndroid"
         android:usesCleartextTraffic="true">

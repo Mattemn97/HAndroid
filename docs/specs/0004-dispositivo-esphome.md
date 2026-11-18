@@ -5,7 +5,7 @@
 ## Requisiti
 
 - HA vede un dispositivo **HAndroid** (integrazione ESPHome), scoperto da solo via mDNS (`_esphomelib._tcp`) o aggiunto a mano con host `127.0.0.1`, porta `6053`, senza chiave.
-- Entità: batteria %, in carica, temperatura batteria, luce ambiente e prossimità (se il sensore c'è), segnale WiFi, uptime, interruttore torcia (se c'è il flash), pulsante "Riavvia Home Assistant".
+- Entità: batteria %, in carica, temperatura batteria, luce ambiente e prossimità (se il sensore c'è), segnale WiFi, uptime, potenza/corrente/tensione della batteria, RAM e memoria libere (lette ogni 60 s), interruttore torcia (se c'è il flash), pulsante "Riavvia Home Assistant".
 - Aggiornamenti solo a cambio valore, con soglia per sensore e al massimo uno ogni 5 s per entità; sensori fisici campionati a 1 s con consegna a lotti; WiFi e uptime letti ogni 60 s.
 
 ## Codice (`app/src/main/java/it/handroid/esphome/`)

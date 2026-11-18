@@ -165,6 +165,7 @@ class HaService : Service() {
         // TMPDIR e il file di stato dalla cartella di --config, e legge da dns.txt i DNS della rete
         // (Android non ha resolv.conf)
         File(filesDir, "dns.txt").writeText(dnsServers().joinToString(","))
+        AccessoRemoto.salva(this)
         setStatus(this, "Carico Python e Home Assistant (dopo un'installazione anche 2-3 minuti)…")
         val args = mutableListOf("hass", "--config", config.path)
         if (Supervisor.recoveryMode(this)) args += "--recovery-mode"

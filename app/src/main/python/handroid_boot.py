@@ -19,9 +19,12 @@ os.environ.setdefault("SSL_CERT_FILE", certifi.where())
 import aiodns
 import bluetooth_adapters
 import bluetooth_adapters.systems
+import probatio
 
 import homeassistant.__main__ as ha_main
+import homeassistant.components.recorder as ha_recorder
 import homeassistant.core as ha_core
+import homeassistant.core_config as ha_core_config
 import homeassistant.requirements as ha_requirements
 import homeassistant.util.package as ha_package
 
@@ -47,6 +50,75 @@ if os.path.isdir(_CUSTOM_APK):
     shutil.rmtree(_CUSTOM, ignore_errors=True)
     shutil.copytree(os.path.join(_CUSTOM_APK, "handroid"), _CUSTOM, ignore=shutil.ignore_patterns("__pycache__"))
     shutil.rmtree(_CUSTOM_APK, ignore_errors=True)
+
+# Plancia "Telefono" con le entità del dispositivo ESPHome HAndroid (spec 0004): si crea una volta,
+# prima che HA parta, negli stessi file che HA scrive per le plance fatte dall'interfaccia. Se
+# l'utente la cancella o la modifica, resta come l'ha lasciata.
+_STORAGE = os.path.join(sys.argv[sys.argv.index("--config") + 1], ".storage")
+_PLANCIA = {"id": "handroid_telefono", "url_path": "handroid-telefono", "mode": "storage",
+            "title": "Telefono", "icon": "mdi:cellphone", "show_in_sidebar": True, "require_admin": False}
+
+
+def _tile(entita, **altro):
+    return {"type": "tile", "entity": entita} | altro
+
+
+_PLANCIA_CONFIG = {"views": [{"title": "Telefono", "type": "sections", "max_columns": 3, "sections": [
+    {"type": "grid", "cards": [
+        {"type": "heading", "heading": "Batteria", "icon": "mdi:battery"},
+        {"type": "gauge", "entity": "sensor.handroid_batteria", "needle": True,
+         "severity": {"green": 50, "yellow": 20, "red": 0}},
+        _tile("binary_sensor.handroid_in_carica"),
+        _tile("sensor.handroid_potenza_batteria"),
+        _tile("sensor.handroid_temperatura_batteria"),
+        _tile("sensor.handroid_corrente_batteria"),
+        _tile("sensor.handroid_tensione_batteria"),
+        {"type": "history-graph", "title": "Ultime 24 ore", "hours_to_show": 24,
+         "entities": ["sensor.handroid_batteria", "sensor.handroid_potenza_batteria"]},
+    ]},
+    {"type": "grid", "cards": [
+        {"type": "heading", "heading": "Sistema", "icon": "mdi:cellphone-cog"},
+        _tile("sensor.handroid_ram_libera"),
+        _tile("sensor.handroid_memoria_libera"),
+        _tile("sensor.handroid_segnale_wifi"),
+        _tile("sensor.handroid_uptime"),
+        _tile("button.handroid_riavvia_home_assistant"),
+    ]},
+    {"type": "grid", "cards": [
+        {"type": "heading", "heading": "Sensori", "icon": "mdi:motion-sensor"},
+        _tile("sensor.handroid_luce_ambiente"),
+        _tile("binary_sensor.handroid_prossimita"),
+        _tile("switch.handroid_torcia", features=[{"type": "toggle"}]),
+        {"type": "markdown", "content": "Le entità compaiono dopo aver aggiunto il dispositivo ESPHome "
+         "**HAndroid** (Impostazioni → Dispositivi e servizi)."},
+    ]},
+]}]}
+
+
+def _crea_plancia():
+    import json
+    elenco = os.path.join(_STORAGE, "lovelace_dashboards")
+    try:
+        with open(elenco, encoding="utf-8") as f:
+            dati = json.load(f)
+    except (OSError, ValueError):
+        dati = {"version": 1, "minor_version": 1, "key": "lovelace_dashboards", "data": {"items": []}}
+    voci = dati.setdefault("data", {}).setdefault("items", [])
+    if any(v.get("id") == _PLANCIA["id"] or v.get("url_path") == _PLANCIA["url_path"] for v in voci):
+        return
+    os.makedirs(_STORAGE, exist_ok=True)
+    with open(os.path.join(_STORAGE, "lovelace." + _PLANCIA["id"]), "w", encoding="utf-8") as f:
+        json.dump({"version": 1, "minor_version": 1, "key": "lovelace." + _PLANCIA["id"],
+                   "data": {"config": _PLANCIA_CONFIG}}, f, indent=2)
+    voci.append(_PLANCIA)
+    with open(elenco, "w", encoding="utf-8") as f:
+        json.dump(dati, f, indent=2)
+
+
+try:
+    _crea_plancia()
+except OSError as e:
+    logging.getLogger("handroid").warning("Plancia Telefono non creata: %s", e)
 
 
 def _read(name):
@@ -87,6 +159,18 @@ if _NATIVE:
     os.environ["PYTHONHOME"] = sys.prefix
     os.environ["PYTHONPATH"] = os.path.join(sys.prefix, "site-packages")
     os.environ["LD_LIBRARY_PATH"] = _NATIVE
+    # ffmpeg (telecamere, istantanee): nell'APK è libffmpeg.so; HA lo cerca come "ffmpeg" nel PATH
+    if os.path.exists(os.path.join(_NATIVE, "libffmpeg.so")):
+        _BIN = os.path.join(_FILES, "bin")
+        os.makedirs(_BIN, exist_ok=True)
+        if os.path.realpath(os.path.join(_BIN, "ffmpeg")) != os.path.join(_NATIVE, "libffmpeg.so"):
+            # la cartella delle librerie cambia a ogni aggiornamento dell'APK
+            try:
+                os.remove(os.path.join(_BIN, "ffmpeg"))
+            except OSError:
+                pass
+            os.symlink(os.path.join(_NATIVE, "libffmpeg.so"), os.path.join(_BIN, "ffmpeg"))
+        os.environ["PATH"] = _BIN + os.pathsep + os.environ.get("PATH", "")
 
 # Pacchetti installati a runtime: nella cartella utente di Python dentro la configurazione di HA,
 # così sopravvivono agli aggiornamenti dell'APK. In testa a sys.path: un aggiornamento vince sulla
@@ -148,6 +232,32 @@ def _ricorda_hass(self, *args, **kwargs):
 
 
 ha_core.HomeAssistant.__init__ = _ricorda_hass
+
+# Accesso da fuori casa: se l'URL Internet di HA è vuoto, si usa l'indirizzo Tailscale che l'app ha
+# trovato (url-remoto.txt). Una scelta già fatta in Impostazioni → Rete non si tocca.
+_carica_config = ha_core_config.Config.async_load
+
+
+async def _carica_config_con_remoto(self):
+    await _carica_config(self)
+    url = (await self.hass.async_add_executor_job(_read, "url-remoto.txt")).strip()
+    if url and not self.external_url:
+        _LOGGER.info("URL Internet impostato a %s (Tailscale)", url)
+        await self.async_update(external_url=url)
+
+
+ha_core_config.Config.async_load = _carica_config_con_remoto
+
+# Batteria: il recorder scrive il database ogni 5 s, e ogni scrittura sveglia CPU e memoria flash.
+# Ogni 30 s basta (si perdono al massimo 30 s di storico in un crash). commit_interval in
+# configuration.yaml vince comunque. Lo schema di HA è già compilato (cambiarne il default non ha
+# effetto): lo si avvolge, aggiungendo il valore prima della validazione originale.
+ha_recorder.CONFIG_SCHEMA = probatio.Schema(
+    {probatio.Optional(ha_recorder.DOMAIN, default=dict): probatio.All(
+        lambda c: {ha_recorder.CONF_COMMIT_INTERVAL: 30} | dict(c or {}),
+        ha_recorder.CONFIG_SCHEMA.schema[ha_recorder.DOMAIN])},
+    extra=probatio.ALLOW_EXTRA,
+)
 _LOGGER = logging.getLogger("handroid")
 ha_package.install_package = _install_package
 

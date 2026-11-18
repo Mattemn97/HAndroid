@@ -28,10 +28,11 @@ list=$(awk '/^## /{on=/^## (Da compilare|Solo sorgente)/} on' "$DEPS" \
 # Librerie C per Android preparate da prepara-wsl.sh. PIP_FIND_LINKS serve ai pacchetti che per
 # compilarsi hanno bisogno di altri wheel Android (cryptography e pynacl usano cffi).
 # GRPC_PYTHON_BUILD_SYSTEM_OPENSSL: la BoringSSL di grpcio va in conflitto con gli header OpenSSL di CPython
-# (grpcio è comunque rinviato: vedi android-rinviati.txt).
 # PY_INCLUDE: la parte Rust di cryptography compila codice C senza ricevere gli header di Python.
 # SODIUM_INSTALL=system: pynacl usa la libsodium compilata da prepara-wsl.sh invece della sua.
 ANDROID_DEPS="$HOME/android-deps/aarch64-linux-android"
+# anche per "pip download" sul PC: lo sdist di av chiede già lì a pkg-config dove sta FFmpeg
+export PKG_CONFIG_PATH="$ANDROID_DEPS/lib/pkgconfig"
 PY_INCLUDE='$(python -c "import sysconfig; print(sysconfig.get_path(\"include\"))")'
 # cibuildwheel riscrive CFLAGS e LDFLAGS dopo questo ambiente: i percorsi passano da CPATH e
 # LIBRARY_PATH, che clang legge comunque.
@@ -83,6 +84,17 @@ for req in $list; do
              && sed -i 's/^LINUX = sys.platform.startswith("linux")/LINUX = sys.platform.startswith(("linux", "android"))/' "$d/psutil/_common.py" \
              && grep -q '"android"' "$d/psutil/_common.py" && tar czf "$f" "$d" && rm -rf "$d")
            extra=(CIBW_TEST_SKIP="*") ;;
+    # grpcio: setup.py sceglie config di c-ares, flag e simboli guardando "linux" in sys.platform; Android è un Linux,
+    # ma senza getservbyport_r (la config Linux di c-ares la dà per presente) e con il log in liblog
+    grpcio) (cd build/sdist && f=$(ls grpcio-*.tar.gz) && d=${f%.tar.gz} && tar xzf "$f" && rm "$f" \
+             && sed -i 's/"linux" in sys.platform/("linux" in sys.platform or sys.platform == "android")/g' "$d/setup.py" \
+             && sed -i 's/EXTRA_ENV_LINK_ARGS += " -lpthread"/EXTRA_ENV_LINK_ARGS += " -lpthread -llog"/' "$d/setup.py" \
+             && sed -i '/#define HAVE_GETSERVBYPORT_R/d' "$d/third_party/cares/config_linux/ares_config.h" \
+             && grep -q '"android"' "$d/setup.py" && tar czf "$f" "$d" && rm -rf "$d")
+            extra=(CIBW_TEST_SKIP="*") ;;
+    # av: FFmpeg condivisa da prepara-wsl.sh (pkg-config la trova in $ANDROID_DEPS); niente test sul telefono.
+    # Il wheel non la include (auditwheel la cercherebbe): le .so arrivano dall'APK, in jniLibs
+    av) extra=(CIBW_TEST_SKIP="*" CIBW_REPAIR_WHEEL_COMMAND_ANDROID="cp {wheel} {dest_dir}") ;;
     # pandas: come numpy, niente test sul telefono
     pandas) extra=(CIBW_BEFORE_BUILD_ANDROID="" CIBW_TEST_SKIP="*") ;;
     # numpy: senza OpenBLAS (non c'è per Android; a HA basta numpy di base), come per Pyodide; niente test sul telefono

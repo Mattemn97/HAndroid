@@ -47,6 +47,7 @@ adb logcat -s HAndroid python.stdout python.stderr
 - Stato condiviso tra il processo dell'app e `:ha`: file in `files/`, non SharedPreferences.
 - Le librerie delle integrazioni caricate all'avvio vanno in `scripts/integrazioni-base.txt`; i pacchetti nativi che non si compilano in `scripts/android-rinviati.txt`, col motivo.
 - Su Windows `sdkmanager.bat` spezza gli argomenti al `;`: passare i pacchetti con `--package_file`.
+- La dimensione vera dell'APK si misura dopo `./gradlew clean`: il pacchetto incrementale lascia spazio vuoto (anche il doppio).
 - Quando cambia la versione di HA, rigenera `docs/dipendenze-android.md`: gli script di build leggono le versioni da lì.
 
 <!-- Solo quello che non si capisce leggendo il codice. Ogni regola dice cosa fare e cosa si rompe altrimenti.

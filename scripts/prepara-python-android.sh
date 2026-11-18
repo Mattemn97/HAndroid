@@ -43,6 +43,11 @@ fi
 mkdir -p app/src/main/jniLibs/arm64-v8a
 cp app/python/prefix/lib/libpython3*.so app/python/prefix/lib/*_python.so app/src/main/jniLibs/arm64-v8a/
 
+# FFmpeg (da prepara-wsl.sh): librerie per av e l'eseguibile, che Android esegue solo da jniLibs
+FFMPEG_LIB="$HOME/android-deps/aarch64-linux-android"
+cp "$FFMPEG_LIB"/lib/lib{av,sw}*.so app/src/main/jniLibs/arm64-v8a/
+cp "$FFMPEG_LIB/bin/ffmpeg" app/src/main/jniLibs/arm64-v8a/libffmpeg.so
+
 echo "==> Lanciatore python (libhpython.so)"
 # $ORIGIN: l'eseguibile trova libpython3.14.so nella sua stessa cartella
 CLANG="${ANDROID_HOME:?manca ANDROID_HOME (Android SDK con NDK)}/ndk/$NDK_VERSION/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android24-clang"
@@ -109,12 +114,16 @@ fi
 rm -rf "$WORK/stdlib" && cp -r app/python/prefix/lib/python3.14 "$WORK/stdlib"
 "$PYTHON" -m compileall -q -j0 --invalidation-mode unchecked-hash "$WORK/site-packages" "$WORK/stdlib" >/dev/null || true
 
+# alcuni wheel (cryptography, numpy, libc++ dei .libs) hanno ancora i simboli di debug
+find "$WORK/site-packages" -name "*.so" -exec "$(dirname "$CLANG")/llvm-strip" --strip-unneeded {} + 2>/dev/null || true
+
 echo "==> python.zip"
 mkdir -p app/src/main/assets
 # lo zip si scrive in $WORK e si copia alla fine: una sola scrittura grande su /mnt/c
 WORK="$WORK" LANGS="$LANGS" "$PYTHON" - <<'PY'
 import os, pathlib, re, zipfile
-skip = {"test", "idlelib", "tkinter", "turtledemo", "frontend_es5"}
+# "tests": i test dei pacchetti (numpy, pandas...) non servono a HA: circa 15 MB in meno sul telefono
+skip = {"test", "tests", "idlelib", "tkinter", "turtledemo", "frontend_es5"}
 langs = os.environ["LANGS"].split()
 work = pathlib.Path(os.environ["WORK"])
 

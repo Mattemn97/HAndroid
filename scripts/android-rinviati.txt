@@ -2,8 +2,6 @@
 # Home Assistant parte lo stesso; le integrazioni che li usano non si caricano.
 # Formato: nome  motivo. Togli la riga quando il pacchetto si compila.
 uv       è un eseguibile, non una libreria; handroid_boot.py lo sostituisce con pip
-grpcio   la copia interna di c-ares non trova ares_config.h su Android; serve solo all'integrazione Cloud (hass-nabucasa)
-av  usa le librerie di FFmpeg, da compilare a parte per Android (telecamere e stream)
 lxml  richiede libxml2 e libxslt per Android
 scipy  serve un compilatore Fortran per Android; lo usano poche integrazioni (es. reverse-geocode, iqvia)
 isal  rifiuta la piattaforma android; è solo un'accelerazione di zlib, HA ne fa a meno

@@ -46,6 +46,7 @@ class MainActivity : Activity() {
             addView(button("Avvia Home Assistant") { HaService.start(this@MainActivity) })
             addView(button("Ferma Home Assistant") { HaService.stop(this@MainActivity) })
             addView(button("Apri l'interfaccia") { open("http://127.0.0.1:8123") })
+            addView(button("Usa da fuori casa") { accessoRemoto() })
             addView(battery)
             addView(button("Copia l'ultimo backup in Download") { exportBackup() })
             addView(button("Cerca aggiornamenti") { checkUpdates() })
@@ -85,12 +86,37 @@ class MainActivity : Activity() {
 
     private fun info(): String {
         val ip = localIp()
+        val remoto = AccessoRemoto.indirizzo()
         return "Dal telefono personale apri:\nhttp://${ip ?: "<ip del telefono>"}:8123\n\n" +
+            "Da fuori casa: ${remoto?.let { AccessoRemoto.url(it) + " (Tailscale)" } ?: "Tailscale spento"}\n" +
             "Avvio automatico: ${if (Supervisor.autostart(this)) "sì" else "no (HA fermato a mano)"}\n" +
             "Ottimizzazione batteria: ${if (Supervisor.batteryExempt(this)) "esclusa" else "attiva: Android può chiudere HA"}\n" +
             "Device owner: ${if (AdminReceiver.isDeviceOwner(this)) "sì" else "no"}\n" +
             "Versione: ${BuildConfig.VERSION_NAME}\n\n" +
             "Log: adb logcat -s HAndroid python.stdout python.stderr"
+    }
+
+    /** Tailscale acceso: condivide l'indirizzo; installato: lo apre; altrimenti porta al download. */
+    private fun accessoRemoto() {
+        val ip = AccessoRemoto.salva(this)
+        when {
+            ip != null -> {
+                startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, AccessoRemoto.url(ip))
+                }, "Indirizzo di Home Assistant da fuori casa"))
+                Toast.makeText(this, "Apri ${AccessoRemoto.url(ip)} con Tailscale acceso anche sul telefono personale. " +
+                    "HA lo usa come URL Internet dal prossimo riavvio.", Toast.LENGTH_LONG).show()
+            }
+            AccessoRemoto.tailscaleInstallato(this) -> {
+                Toast.makeText(this, "Accedi in Tailscale e accendi la VPN, poi torna qui", Toast.LENGTH_LONG).show()
+                startActivity(packageManager.getLaunchIntentForPackage(AccessoRemoto.PACCHETTO_TAILSCALE))
+            }
+            else -> {
+                Toast.makeText(this, "Installa Tailscale (gratis): collega i tuoi dispositivi senza aprire porte", Toast.LENGTH_LONG).show()
+                open(AccessoRemoto.DOWNLOAD_TAILSCALE)
+            }
+        }
     }
 
     @SuppressLint("BatteryLife")  // un server sempre acceso è proprio il caso previsto da Android

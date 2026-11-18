@@ -1,5 +1,6 @@
 package it.handroid.esphome
 
+import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -18,6 +19,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
+import android.os.StatFs
 import android.os.SystemClock
 import android.util.Log
 import it.handroid.Supervisor
@@ -93,6 +95,16 @@ private class Sensori(private val ctx: Context, private val r: Registro, private
         decimali = 1, deviceClass = "temperature", diagnostica = true, soglia = 0.5f))
     private val rssi = r.aggiungi(Sensore("segnale_wifi", "Segnale WiFi", unita = "dBm", deviceClass = "signal_strength",
         diagnostica = true, soglia = 3f))
+    private val potenza = r.aggiungi(Sensore("potenza_batteria", "Potenza batteria", unita = "W", decimali = 2,
+        deviceClass = "power", soglia = 0.1f))
+    private val corrente = r.aggiungi(Sensore("corrente_batteria", "Corrente batteria", unita = "mA",
+        deviceClass = "current", diagnostica = true, soglia = 20f))
+    private val tensione = r.aggiungi(Sensore("tensione_batteria", "Tensione batteria", unita = "V", decimali = 2,
+        deviceClass = "voltage", diagnostica = true, soglia = 0.02f))
+    @Volatile private var tensioneV: Float? = null
+    private val ram = r.aggiungi(Sensore("ram_libera", "RAM libera", unita = "%", icona = "mdi:memory", soglia = 2f))
+    private val memoria = r.aggiungi(Sensore("memoria_libera", "Memoria libera", unita = "GB", decimali = 1,
+        deviceClass = "data_size", icona = "mdi:harddisk", soglia = 0.1f))
     private val uptime = r.aggiungi(Sensore("uptime", "Uptime", unita = "s", deviceClass = "duration",
         stateClass = 2, diagnostica = true, icona = "mdi:timer-outline"))
 
@@ -125,12 +137,31 @@ private class Sensori(private val ctx: Context, private val r: Registro, private
                 @Suppress("DEPRECATION")
                 val w = ctx.getSystemService(WifiManager::class.java).connectionInfo
                 if (w != null && w.rssi > -127) r.aggiorna(rssi, w.rssi.toFloat())
+                consumi()
                 h.postDelayed(this, 60_000)
             }
         })
     }
 
+    /** Ogni 60 s, insieme al WiFi: consumo della batteria, RAM e memoria libere. */
+    private fun consumi() {
+        val bm = ctx.getSystemService(BatteryManager::class.java)
+        // microampere; positivo = entra nella batteria (alcuni produttori invertono il segno)
+        val ua = bm.getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        if (ua != Long.MIN_VALUE && ua != 0L) {
+            r.aggiorna(corrente, ua / 1000f)
+            tensioneV?.let { r.aggiorna(potenza, Consumi.watt(ua, it)) }
+        }
+        val mi = ActivityManager.MemoryInfo().also { ctx.getSystemService(ActivityManager::class.java).getMemoryInfo(it) }
+        r.aggiorna(ram, Consumi.percento(mi.availMem, mi.totalMem))
+        r.aggiorna(memoria, StatFs(ctx.filesDir.path).availableBytes / 1e9f)
+    }
+
     private fun leggiBatteria(i: Intent) {
+        i.getIntExtra(BatteryManager.EXTRA_VOLTAGE, 0).takeIf { it > 0 }?.let {
+            tensioneV = it / 1000f
+            r.aggiorna(tensione, it / 1000f)
+        }
         val livello = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1)
         val scala = i.getIntExtra(BatteryManager.EXTRA_SCALE, 100)
         if (livello >= 0) r.aggiorna(batteria, 100f * livello / scala)

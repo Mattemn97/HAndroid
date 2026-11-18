@@ -112,8 +112,13 @@ class ProxyBle private constructor(private val ctx: Context, private val adapter
         return Annuncio(CodecBle.indirizzo(r.device.address), r.rssi, tipo, CodecBle.taglia(r.scanRecord?.bytes))
     }
 
+    // Batteria: a schermo spento (quasi sempre, su un server) la radio scansiona al 25% del tempo invece che
+    // sempre, e i lotti partono ogni secondo invece che ogni 100 ms. I sensori BLE ripetono l'annuncio ogni
+    // pochi secondi, quindi HA li riceve lo stesso.
+    private var intervalloSvuota = 100L
+
     private val svuota = object : Runnable {
-        override fun run() { lotto.svuota()?.let(::aTutti); if (scansione) h.postDelayed(this, 100) }
+        override fun run() { lotto.svuota()?.let(::aTutti); if (scansione) h.postDelayed(this, intervalloSvuota) }
     }
 
     private fun aggiornaScansione() {
@@ -122,9 +127,11 @@ class ProxyBle private constructor(private val ctx: Context, private val adapter
         if (!serve) { ferma(); statoCambiato(MsgBle.STATO_STOPPED); return }
         val scanner = adapter.bluetoothLeScanner ?: return statoCambiato(MsgBle.STATO_FAILED)
         val acceso = ctx.getSystemService(PowerManager::class.java).isInteractive
-        val impostazioni = ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build()
+        val modo = if (acceso) ScanSettings.SCAN_MODE_LOW_LATENCY else ScanSettings.SCAN_MODE_BALANCED
+        intervalloSvuota = if (acceso) 100L else 1_000L
+        val impostazioni = ScanSettings.Builder().setScanMode(modo).build()
         runCatching { scanner.startScan(if (acceso) null else filtriSchermoSpento(), impostazioni, callbackScan) }
-            .onSuccess { scansione = true; h.postDelayed(svuota, 100); statoCambiato(MsgBle.STATO_RUNNING)
+            .onSuccess { scansione = true; h.postDelayed(svuota, intervalloSvuota); statoCambiato(MsgBle.STATO_RUNNING)
                 Log.i(TAG, "Scansione BLE avviata (schermo ${if (acceso) "acceso" else "spento, con filtri"})") }
             .onFailure { Log.w(TAG, "Scansione BLE non avviata: ${it.message}"); statoCambiato(MsgBle.STATO_FAILED) }
     }

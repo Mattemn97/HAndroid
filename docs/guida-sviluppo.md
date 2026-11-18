@@ -277,7 +277,7 @@ Tutto parte con HA, nel processo `:ha`:
 
 | Cosa | Come lo vede HA | Spec |
 | --- | --- | --- |
-| Sensori e comandi del telefono (batteria, luce, prossimità, Wi-Fi, torcia, riavvio) | dispositivo ESPHome "HAndroid", trovato da zeroconf o aggiunto a mano con `127.0.0.1`, porta `6053`, senza chiave | [0004](specs/0004-dispositivo-esphome.md) |
+| Sensori e comandi del telefono (batteria e consumi, RAM, memoria, luce, prossimità, Wi-Fi, torcia, riavvio) | dispositivo ESPHome "HAndroid", trovato da zeroconf o aggiunto a mano con `127.0.0.1`, porta `6053`, senza chiave | [0004](specs/0004-dispositivo-esphome.md) |
 | Bluetooth del telefono (termometri, sensori BLE) | proxy Bluetooth dello stesso dispositivo ESPHome; serve il permesso "Dispositivi nelle vicinanze" | [0005](specs/0005-proxy-bluetooth.md) |
 | Lampade e ventilatori a annunci BLE (FanLamp Pro, LampSmart) | trasmettitore `ble_adv_proxy` dello stesso dispositivo, per l'integrazione personalizzata ble_adv (adattatore `esp/handroid`); serve il permesso "Dispositivi nelle vicinanze" | [0008](specs/0008-trasmettitore-ble-adv.md) |
 | Chiavette Zigbee e Z-Wave via USB-OTG | socket `socket://127.0.0.1:6638` (Zigbee) o `6639` (Z-Wave) da scrivere in ZHA o Z-Wave JS; stato in `ha-config/handroid_usb_stato.json` | [0003](specs/0003-ponte-usb-seriale.md) |
@@ -306,6 +306,8 @@ adb forward tcp:6053 tcp:6053
 pip install aioesphomeapi   # poi APIClient("127.0.0.1", 6053, None)
 ```
 
+Plancia **Telefono** nella barra laterale: `handroid_boot.py` la crea al primo avvio (file `.storage/lovelace_dashboards` e `.storage/lovelace.handroid_telefono`) con le entità `*.handroid_*` del dispositivo ESPHome. Se esiste già non la tocca: chi la modifica o la cancella la ritrova così. Per vederla all'apertura di HA: Impostazioni → Plance → Telefono → ⋮ → **Imposta come predefinita**. Le entità rinominate in HA vanno aggiornate anche nella plancia.
+
 ## Server sempre acceso
 
 Il supervisor (`Supervisor.kt` e il watchdog in `HaService.kt`) tiene HA acceso:
@@ -332,6 +334,8 @@ Sul telefono, una volta:
    ```
 
    Per toglierlo serve il ripristino di fabbrica, oppure `adb shell dpm remove-active-admin it.handroid/.AdminReceiver` con un'app di debug.
+
+Batteria: un server acceso 24/7 consuma comunque, quindi il telefono va tenuto in carica (meglio con un limite di carica all'80%, se MIUI lo offre). Le parti che consumano di più sono già ridotte. A schermo spento la scansione Bluetooth gira in modalità bilanciata e manda i lotti a HA ogni secondo (`ProxyBle.kt`). Il recorder di HA salva il database ogni 30 secondi invece che ogni 5 (`handroid_boot.py`; `recorder: commit_interval:` in `configuration.yaml` vince). Il wake lock e il Wi-Fi lock restano: senza, HA non risponde a schermo spento.
 
 Backup: li crea HA (Impostazioni → Sistema → Backup, anche automatici). Il pulsante **Copia l'ultimo backup in Download** porta l'ultimo in `Download/HAndroid`, fuori dalla memoria privata dell'app.
 
@@ -376,7 +380,9 @@ Gradle su Windows, se manca qualcosa:
 | lru-dict ha un wheel Android solo per cp313 | non usabile con Python 3.14 | si compila |
 | pyyaml senza libyaml | wheel solo Python, YAML più lento | accettato per la M0 |
 | cffi non trova libffi | cffi, cryptography, pynacl e pycares non si compilano | libffi statica di BeeWare in `~/android-deps` |
-| grpcio: la sua BoringSSL va in conflitto con gli header OpenSSL di CPython | grpcio non si compila | `GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1`, da verificare |
+| grpcio: la sua BoringSSL va in conflitto con gli header OpenSSL di CPython | grpcio non si compila | `GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1` |
+| grpcio: `setup.py` sceglie la config di c-ares solo se `"linux" in sys.platform` | `ares_config.h` non trovato | il `case` di `compila-wheel-android.sh` tratta `android` come `linux` |
+| av vuole FFmpeg 8 condivisa | telecamere e stream non partono | FFmpeg da `prepara-wsl.sh`; le `.so` e `ffmpeg` (come `libffmpeg.so`) vanno in jniLibs, `handroid_boot.py` mette `ffmpeg` nel PATH |
 | pillow, psutil | non si compilano | rinviati, vedi `scripts/android-rinviati.txt` |
 | `Os.setenv` da Kotlin non arriva né al codice C né a `os.environ` | Python non trova site-packages; HOME, TMPDIR e DNS mancanti | percorsi come argomento JNI, il resto via file in `files/` |
 | HA esce con "must be run in a Python virtual environment or a container" | HA non parte | `validate_environment` saltata in `handroid_boot.py` |

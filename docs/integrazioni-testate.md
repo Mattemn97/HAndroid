@@ -18,9 +18,9 @@ Provate sul Xiaomi 12T (Android 14, MIUI), HAndroid 0.3.0-m3, Home Assistant 202
 | USB | si carica | il ponte per chiavette Zigbee/Z-Wave è da provare con una chiavetta |
 | Philips Hue | configurazione avviata | provata sull'emulatore, senza bridge |
 | Cast | trovato | da aggiungere e provare |
-| cloud (Nabu Casa) | non funziona | serve grpcio, non ancora compilato per Android |
+| cloud (Nabu Casa) | da provare | grpcio compilato per Android (0.5.0) |
 | dhcp | non funziona | servono socket raw, cioè root |
-| stream, go2rtc, telecamere | non funziona | servono FFmpeg e l'eseguibile go2rtc per Android |
+| stream, ffmpeg, telecamere | da provare | FFmpeg 8.1 e av compilati per Android (0.5.0); go2rtc resta fuori (eseguibile a parte) |
 
 Le integrazioni con pacchetti nativi non ancora compilati mostrano una notifica "HAndroid: pacchetto mancante". L'elenco dei pacchetti rinviati e il motivo stanno in [`scripts/android-rinviati.txt`](../scripts/android-rinviati.txt).
 

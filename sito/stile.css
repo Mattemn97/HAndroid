@@ -27,3 +27,4 @@
 @media (max-width: 560px) {
   #indice th:nth-child(4), #indice td:nth-child(4) { display: none; }
 }
+.elenco-tappe .mf-step { width: auto; min-width: 2.2em; padding: 0 .45em; border-radius: 999px; }

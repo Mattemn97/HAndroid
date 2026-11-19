@@ -139,6 +139,14 @@ def keep(rel):
         return re.split(r"[-_.]", rel.name)[0] in langs
     return True
 
+# Sorgenti .py vuoti quando c'è il loro .pyc (unchecked-hash: Python non guarda il sorgente): circa 100 MB
+# in meno sul telefono. Il file resta perché HA cerca le piattaforme per nome (light.py…). Restano interi
+# handroid_boot.py e custom_components, che si correggono sul telefono. I traceback non mostrano le righe.
+def vuoto(f, rel):
+    if rel.suffix != ".py" or rel.name == "handroid_boot.py" or "custom_components" in rel.parts:
+        return False
+    return (f.parent / "__pycache__" / f"{f.stem}.cpython-314.pyc").exists()
+
 out = work / "python.zip"
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
     for root, prefix in ((work / "stdlib", "lib/python3.14"),
@@ -148,10 +156,13 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for f in base.rglob("*"):
             rel = f.relative_to(base)
             if f.is_file() and keep(rel):
-                z.write(f, f"{prefix}/{rel.as_posix()}")
+                if vuoto(f, rel):
+                    z.writestr(f"{prefix}/{rel.as_posix()}", b"")
+                else:
+                    z.write(f, f"{prefix}/{rel.as_posix()}")
     n = len(z.infolist())
 print(f"python.zip: {n} file, {out.stat().st_size // 2**20} MB")
 PY
 cp "$WORK/python.zip" app/src/main/assets/python.zip
 echo "$stamp" > "$WORK/impronta"
-echo "Pronto: ora compila l'APK da Android Studio o con ./gradlew assembleDebug"
+echo "Pronto: ora compila l'APK da Android Studio o con ./gradlew assembleGithubDebug"

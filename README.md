@@ -99,13 +99,13 @@ Un'app tutta nostra che fa girare il **vero** Home Assistant dentro l'APK, con P
 
 Il progetto completo (architettura, bridge, add-on, roadmap, rischi) è in [`docs/progetto-handroid.md`](docs/progetto-handroid.md). Per compilarlo, provarlo o sviluppare add-on parti da [`docs/guida-sviluppo.md`](docs/guida-sviluppo.md).
 
-Stato: milestoni M0-M3 fatte e provate sul 12T, M4 (rilascio) pronta da pubblicare. Manca il gate finale: 7 giorni di fila senza interventi. Dettagli nel [registro](docs/registro.md), integrazioni provate in [`docs/integrazioni-testate.md`](docs/integrazioni-testate.md).
+Stato: versione 0.6.0. Da qui su GitHub c'è solo il codice: l'app pronta arriverà sul Play Store con la 1.0 ([roadmap](docs/roadmap.md)); chi vuole può compilarla da sé con la guida. I rilasci 0.4.0 e 0.5.0 restano come archivio con l'APK. Dettagli nel [registro](docs/registro.md), integrazioni provate in [`docs/integrazioni-testate.md`](docs/integrazioni-testate.md).
 
-Installazione dal PC, con il telefono collegato in debug USB:
+Installazione dal PC, con il telefono collegato in debug USB, dopo aver compilato l'app:
 
 ```bash
-scripts/installa-handroid.sh                  # ultimo rilascio da GitHub
-scripts/installa-handroid.sh HAndroid.apk     # un APK locale
+scripts/installa-handroid.sh                  # l'APK compilato (./gradlew assembleGithubRelease o il debug)
+scripts/installa-handroid.sh HAndroid.apk     # un altro APK locale
 ``` Esiste anche come documento modificabile: [HAndroid su Claude](https://claude.ai/artifact/SYwCcowPZbvN4x8w671skB).
 
 ---

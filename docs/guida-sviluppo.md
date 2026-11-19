@@ -141,14 +141,14 @@ bash scripts/compila-wheel-android.sh
 bash scripts/prepara-python-android.sh
 
 # 3. APK
-./gradlew assembleDebug          # Windows: .\gradlew.bat assembleDebug
+./gradlew assembleGithubDebug    # Windows: .\gradlew.bat assembleGithubDebug
 ```
 
 - `compila-wheel-android.sh` accetta anche nomi di pacchetti (`... orjson pyyaml`) per ricompilarne solo alcuni. I log stanno in `build/log/<pacchetto>.log`.
 - `prepara-python-android.sh` si ferma ed elenca i wheel mancanti se il passo 1 non è completo: non produce mai un APK a metà.
 - `prepara-python-android.sh` lavora in `~/.cache/handroid` quando il repo sta su `/mnt/c`: lì pip e zip sono molte volte più veloci, e su Windows si copia solo lo zip finito. Se requisiti, wheel e file in `app/src/main/python/` non cambiano, non rifà nulla.
 - Lo zip tiene solo le lingue in `LANGS` (default `en it`) e toglie il frontend per browser vecchi (`frontend_es5`), le mappe `.map` e le copie `.gz`/`.br`: da 603 a circa 200 MB non compressi. Per un'altra lingua: `LANGS="en it de" bash scripts/prepara-python-android.sh`.
-- L'APK finisce in `app/build/outputs/apk/debug/app-debug.apk`.
+- L'APK finisce in `app/build/outputs/apk/github/debug/app-github-debug.apk`. Le versioni sono due (*flavor*): `github`, per chi compila da sé, e `play`, per il Play Store (niente "Cerca aggiornamenti"; `BuildConfig.PLAY`).
 
 ## Provare sul telefono
 
@@ -168,15 +168,15 @@ emulator -avd handroid -no-window -no-audio -memory 4096
 Telefono di riferimento: Xiaomi 12T, Android 14 (MIUI). Serve il debug USB attivo (vedi il README, strada A, punto 3).
 
 ```bash
-./gradlew installDebug
+./gradlew installGithubDebug
 adb shell am start -n it.handroid/.MainActivity
 adb logcat -s HAndroid python.stdout python.stderr
 ```
 
-Su MIUI `installDebug` fallisce con `INSTALL_FAILED_USER_RESTRICTED` se "Installa tramite USB" è spento, e MIUI lo attiva solo con SIM e account Xiaomi. `pm install` dalla shell invece funziona:
+Su MIUI `installGithubDebug` fallisce con `INSTALL_FAILED_USER_RESTRICTED` se "Installa tramite USB" è spento, e MIUI lo attiva solo con SIM e account Xiaomi. `pm install` dalla shell invece funziona:
 
 ```bash
-adb push app/build/outputs/apk/debug/app-debug.apk /data/local/tmp/h.apk
+adb push app/build/outputs/apk/github/debug/app-github-debug.apk /data/local/tmp/h.apk
 adb shell pm install -r /data/local/tmp/h.apk
 ```
 
@@ -317,7 +317,7 @@ Comandi dell'app (`MainActivity.kt`), divisi in sezioni:
 | Home Assistant | Apri l'interfaccia, Avvia, Riavvia, Ferma |
 | Da fuori casa | Cloudflare Tunnel ([spec 0009](specs/0009-accesso-cloudflare-tunnel.md)), Tailscale ([accesso-remoto.md](accesso-remoto.md)) |
 | Problemi | Mostra / Condividi il log (logcat dell'app e coda di `home-assistant.log`, senza PC), Riavvia in / Esci dalla modalità di ripristino (file `ripristino`) |
-| Manutenzione | esclusione dall'ottimizzazione batteria, backup in Download, Spazio occupato, Svuota la cache (pip e app), Cerca aggiornamenti |
+| Manutenzione | esclusione dall'ottimizzazione batteria, backup in Download, Backup automatici in una cartella e Ripristina un backup da file ([spec 0010](specs/0010-backup-fuori-dal-telefono.md)), Avviso se il server si ferma, Spazio occupato, Svuota la cache (pip e app), Cerca aggiornamenti (solo versione `github`: avvisa di un codice più nuovo da compilare) |
 | Avanzate | Dispositivo ESPHome visibile agli altri HA della rete (file `esphome-lan`), Azzera la configurazione (due conferme, i backup restano) |
 
 Gli stessi comandi principali stanno anche nella notifica (Apri, Riavvia, Ferma) e nel riquadro **Home Assistant** delle impostazioni rapide (`HaTile.kt`: acceso = avvio automatico attivo). Tutto lo stato condiviso con `:ha` passa da file in `files/`.
@@ -373,8 +373,10 @@ Decisioni nella [spec 0007](specs/0007-rilascio.md). Una volta per PC: la chiave
 bash scripts/prepara-python-android.sh            # in WSL
 # alza versionName/versionCode in app/build.gradle.kts, voce nel registro, commit
 bash scripts/rilascio.sh                          # APK firmato in build/rilascio/, con SHA-256 e note
-PUBBLICA=1 bash scripts/rilascio.sh               # tag v<versione> e rilascio su GitHub
+PUBBLICA=1 bash scripts/rilascio.sh               # tag v<versione> e rilascio su GitHub, senza APK
 ```
+
+Dalla 0.6.0 il rilascio su GitHub ha solo codice e note: l'APK firmato resta in `build/rilascio/` per il proprio telefono (`scripts/installa-handroid.sh build/rilascio/HAndroid-<versione>.apk`), quello per tutti arriverà dal Play Store ([roadmap](roadmap.md)). I rilasci 0.4.0 e 0.5.0 restano come archivio.
 
 L'APK di rilascio ha una firma diversa da quello di debug: sul telefono si passa dall'uno all'altro solo disinstallando (prima un backup di HA).
 

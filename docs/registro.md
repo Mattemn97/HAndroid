@@ -2,6 +2,30 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-19 · 0.6.0: backup fuori dal telefono, avviso, app più leggera, GitHub senza APK
+
+**Risultato:** versione 0.6.0, rilasciata come solo codice: da qui su GitHub non c'è più l'APK pronto (piano in [roadmap.md](roadmap.md), "Modello"). Non ancora provata sul 12T.
+
+**Fatto**
+- **Backup automatici in una cartella** (spec 0010): ogni ora l'ultimo backup di HA va nella cartella scelta (Drive, rete, chiavetta), tenendo gli ultimi 7. **Ripristina un backup da file** porta un `.tar` tra i backup di HA.
+- **Avviso se il server si ferma**: ping ogni 5 minuti a healthchecks.io (o simili) finché HA risponde.
+- **App più leggera**: i `.py` nello zip sono vuoti quando c'è il loro `.pyc` (`unchecked-hash`); restano interi `handroid_boot.py` e `custom_components`. Sul telefono 304 MB invece di 403, `python.zip` 122 MB invece di 147.
+- **Due versioni dell'app** (flavor `github` e `play`, `BuildConfig.PLAY`): i comandi Gradle diventano `assembleGithubDebug`, `testGithubDebugUnitTest`, `installGithubDebug`. Nella `play` non c'è "Cerca aggiornamenti"; nella `github` avvisa di un codice più nuovo da compilare.
+- `rilascio.sh` crea tag e note senza APK; `installa-handroid.sh` installa l'APK compilato in locale.
+
+**Provato**
+- Test unitari: 46 su 46; build `github` e `play`.
+- Con HA 2026.11.1 in un venv Linux, sorgenti svuotati come nello zip: stessi errori dell'avvio con sorgenti interi (40, tutti pacchetti assenti nel venv), nessuno in più.
+
+**Ancora aperto**
+- Prove sul 12T della 0.5.0 e della 0.6.0; il gate dei 7 giorni della 0.6.0 non è ancora passato.
+- Copia su Drive in background: va provata, alcune app di archiviazione la interrompono (spec 0010, K1).
+
+## 2026-11-18 · Pianificazione fino alla 1.0.0
+
+- Nuova [roadmap.md](roadmap.md): 0.6.0 affidabile e al sicuro, 0.7.0 voce e hardware del telefono, 0.8.0 add-on nativi (Matter, go2rtc, Zigbee2MQTT), 0.9.0 pronto per il Play Store, 1.0.0 a pagamento su Play e gratis su GitHub. Ogni versione ha un gate sul telefono.
+- Nome deciso: HAndroid (senza "Home Assistant" nel titolo né il suo logo). Modello deciso: abbonamento 2,99 €/mese su Play (HA non si ferma se scade), GitHub solo codice senza APK dalla 0.6.0. L'abbonamento paga il server degli aggiornamenti automatici (build a ogni release di HA, pubblicazione su Play). Rilasci 0.4.0 e 0.5.0 restano come archivio. Piano lavoro per lavoro in [piano-versioni.md](piano-versioni.md). Rischio principale: la policy di Play sul codice scaricato (pip e add-on).
+
 ## 2026-11-18 · 0.5.0: telecamere, Cloud, accesso remoto gratis, comandi dell'app
 
 **Risultato:** versione 0.5.0. Riassunto per chi aggiorna (dettagli nelle due voci qui sotto):

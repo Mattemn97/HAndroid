@@ -125,6 +125,8 @@ Si parte dalla prova di fattibilità (M0). Se Home Assistant non parte nell'APK,
 
 Ogni gate è un test che si fa sul Xiaomi 12T: finché il test non passa, non si apre la milestone successiva.
 
+Dopo la M4: versioni dalla 0.6.0 alla 1.0.0 sul Play Store in [roadmap.md](roadmap.md).
+
 ## Rischi e domande aperte
 
 Il rischio principale sono le dipendenze native: va scoperto nella M0, prima di scrivere qualsiasi altra cosa.

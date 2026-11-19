@@ -38,7 +38,10 @@ object Maintenance {
         return latest.name
     }
 
-    /** Ultimo rilascio pubblicato: versione e indirizzo dell'APK, o null se non è più recente di questo. */
+    /**
+     * Ultimo rilascio pubblicato: versione e pagina del rilascio, o null se non è più recente di questo.
+     * Dalla 0.6.0 i rilasci su GitHub non hanno l'APK: chi compila da sé aggiorna il codice e ricompila.
+     */
     fun newerRelease(): Pair<String, String>? {
         val connection = URL(RELEASES).openConnection() as HttpURLConnection
         connection.setRequestProperty("Accept", "application/vnd.github+json")
@@ -48,12 +51,7 @@ object Maintenance {
         val release = JSONObject(connection.inputStream.bufferedReader().readText())
         val version = release.getString("tag_name").removePrefix("v")
         if (!isNewer(version, BuildConfig.VERSION_NAME)) return null
-        val assets = release.getJSONArray("assets")
-        for (i in 0 until assets.length()) {
-            val asset = assets.getJSONObject(i)
-            if (asset.getString("name").endsWith(".apk")) return version to asset.getString("browser_download_url")
-        }
-        return null
+        return version to release.getString("html_url")
     }
 
     /** Confronta versioni tipo "0.2.0" e "0.1.3-m1" sulle parti numeriche. */

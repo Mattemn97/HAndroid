@@ -30,12 +30,12 @@ if [ -n "${PUBBLICA:-}" ]; then
 fi
 
 GRADLE=./gradlew; [ -f gradlew.bat ] && [ "${OS:-}" = Windows_NT ] && GRADLE=./gradlew.bat
-rm -rf app/build/intermediates/apk app/build/outputs/apk/release   # evita APK gonfiati dalla build incrementale
-"$GRADLE" -q testDebugUnitTest assembleRelease
+rm -rf app/build/intermediates/apk app/build/outputs/apk/github/release   # evita APK gonfiati dalla build incrementale
+"$GRADLE" -q testGithubDebugUnitTest assembleGithubRelease
 
 mkdir -p build/rilascio
 APK="build/rilascio/HAndroid-$VERSIONE.apk"
-cp app/build/outputs/apk/release/app-release.apk "$APK"
+cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
 SHA=$(sha256sum "$APK" | cut -d' ' -f1)
 
 # note: la voce più recente del registro
@@ -45,7 +45,7 @@ NOTE=build/rilascio/note-$VERSIONE.md
   echo
   echo "SHA-256 di \`HAndroid-$VERSIONE.apk\`: \`$SHA\`"
   echo
-  echo "Installazione: \`scripts/installa-handroid.sh\` dal PC, oppure scarica l'APK sul telefono e aprilo."
+  echo "Su GitHub c'è solo il codice: per compilare e installare l'app vedi \`docs/guida-sviluppo.md\`. I rilasci 0.4.0 e 0.5.0 restano come archivio con l'APK."
 } > "$NOTE"
 echo "$APK ($(du -h "$APK" | cut -f1)), SHA-256 $SHA"
 
@@ -54,5 +54,7 @@ git tag -a "$TAG" -m "HAndroid $VERSIONE"
 git push -q origin "$TAG"
 # sempre "latest": l'app ("Cerca aggiornamenti") e installa-handroid.sh leggono /releases/latest,
 # che salta le pre-release
-gh release create "$TAG" "$APK" --title "HAndroid $VERSIONE" --notes-file "$NOTE" --latest
+# dalla 0.6.0 su GitHub solo codice e note (docs/roadmap.md, "Modello"): l'APK resta in build/rilascio
+# per il proprio telefono; quello pronto per tutti arriva dal Play Store
+gh release create "$TAG" --title "HAndroid $VERSIONE" --notes-file "$NOTE" --latest
 echo "Pubblicato: https://github.com/Mattemn97/HAndroid/releases/tag/$TAG"

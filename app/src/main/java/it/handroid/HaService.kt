@@ -111,10 +111,15 @@ class HaService : Service() {
         val readyAt = System.currentTimeMillis()
         var failures = 0
         var stable = false
+        var giro = 0
         while (!stopping) {
             Thread.sleep(30_000)
             Supervisor.scheduleSafetyNet(this)
             failures = if (responds()) 0 else failures + 1
+            giro++
+            // ogni 5 minuti l'avviso esterno (solo se HA risponde), ogni ora la copia dei backup fuori dal telefono
+            if (failures == 0 && giro % 10 == 1) Controllo.ping(this)
+            if (giro % 120 == 1) runCatching { BackupEsterno.copia(this) }.onFailure { Log.w(TAG, "Backup esterno: ${it.message}") }
             if (failures >= 3) {
                 crashed("Home Assistant non risponde da 90 secondi")
                 return

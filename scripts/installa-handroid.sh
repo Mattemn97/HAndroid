@@ -3,8 +3,8 @@
 #  installa-handroid.sh
 #  Installa HAndroid sul telefono server dal PC, via ADB (va bene anche Git Bash su Windows).
 #
-#  Uso: scripts/installa-handroid.sh                  ultimo rilascio da GitHub
-#       scripts/installa-handroid.sh app.apk          un APK locale
+#  Uso: scripts/installa-handroid.sh                  l'APK compilato (assembleGithubRelease, o il debug)
+#       scripts/installa-handroid.sh app.apk          un altro APK locale
 #       scripts/installa-handroid.sh --device-owner   in più rende l'app device owner
 #
 #  Usa "pm install" e non "adb install": su MIUI senza SIM "adb install" è bloccato.
@@ -14,7 +14,6 @@
 set -euo pipefail
 export MSYS_NO_PATHCONV=1   # Git Bash: non convertire /data/... in percorsi Windows
 
-REPO="Mattemn97/HAndroid"
 PKG="it.handroid"
 APK="" OWNER=0
 for a in "$@"; do
@@ -28,13 +27,13 @@ done
 command -v adb >/dev/null || { echo "Serve adb (Android SDK Platform-Tools) nel PATH." >&2; exit 1; }
 [ "$(adb get-state 2>/dev/null)" = device ] || { echo "Nessun telefono collegato con il debug USB attivo." >&2; exit 1; }
 
+# dalla 0.6.0 i rilasci su GitHub non hanno l'APK: si installa quello compilato qui
 if [ -z "$APK" ]; then
-  URL=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" \
-    | grep -o '"browser_download_url": *"[^"]*\.apk"' | head -1 | cut -d'"' -f4 || true)
-  [ -n "$URL" ] || { echo "Nessun rilascio trovato su $REPO: passa un APK locale." >&2; exit 1; }
-  APK="${TMPDIR:-/tmp}/handroid.apk"
-  echo "Scarico $URL"
-  curl -fL -o "$APK" "$URL"
+  cd "$(dirname "$0")/.."
+  for f in app/build/outputs/apk/github/release/app-github-release.apk app/build/outputs/apk/github/debug/app-github-debug.apk; do
+    [ -f "$f" ] && { APK="$f"; break; }
+  done
+  [ -n "$APK" ] || { echo "Nessun APK compilato: lancia ./gradlew assembleGithubRelease (vedi docs/guida-sviluppo.md)." >&2; exit 1; }
 fi
 
 echo "Installo $APK"

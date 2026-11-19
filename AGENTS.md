@@ -19,9 +19,9 @@ scripts/compila-wheel-android.sh
 # Python + HA dentro l'APK
 scripts/prepara-python-android.sh
 # Build e installazione sul telefono
-./gradlew installDebug
+./gradlew installGithubDebug
 # Test
-./gradlew testDebugUnitTest
+./gradlew testGithubDebugUnitTest
 # Log
 adb logcat -s HAndroid python.stdout python.stderr
 ```
@@ -34,7 +34,7 @@ adb logcat -s HAndroid python.stdout python.stderr
 - Un cambio al formato degli add-on va in `docs/addon/README.md`, con una riga nello storico in fondo.
 - In Git Bash usa `export MSYS_NO_PATHCONV=1` prima dei comandi adb, altrimenti `/data/...` diventa un percorso Windows. Così però curl e adb non capiscono `/tmp/...`: passa i file temporanei da `cygpath -m`, e a tar con `-f -` (un `C:/...` per tar è un host remoto).
 - Per riavviare HA dal PC: `adb shell am force-stop it.handroid` e poi `adb shell monkey -p it.handroid -c android.intent.category.LAUNCHER 1` (MIUI ignora `am start` dopo un force-stop). Un kill normale di `:ha` il supervisor lo prende per uno stop voluto.
-- I `.pyc` nell'APK sono `unchecked-hash`: un `.py` copiato sul telefono non vale finché non cancelli il suo `.pyc` in `__pycache__`.
+- I `.pyc` nell'APK sono `unchecked-hash`: un `.py` copiato sul telefono non vale finché non cancelli il suo `.pyc` in `__pycache__`. Sul telefono i `.py` sono vuoti (tranne `handroid_boot.py` e `custom_components`): per leggere un sorgente guardalo nel PC, in `~/.cache/handroid/site-packages`.
 - Su Android OpenSSL non ha certificati CA: `handroid_boot.py` imposta `SSL_CERT_FILE` a certifi. Un `CERTIFICATE_VERIFY_FAILED` in un'integrazione parte da lì.
 - Niente `custom_components` in `site-packages`: nasconde quella di HA. `handroid_boot.py` copia la nostra integrazione e la toglie.
 - `Os.setenv` in Kotlin non arriva a Python: i dati per Python passano da argomenti JNI o da file in `files/`.

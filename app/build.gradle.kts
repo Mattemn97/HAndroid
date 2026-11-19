@@ -6,7 +6,7 @@ plugins {
 }
 
 // Firma dei rilasci: keystore.properties (fuori da git) con storeFile, storePassword, keyAlias, keyPassword.
-// Senza, assembleRelease produce un APK non firmato. Vedi scripts/rilascio.sh.
+// Senza, assembleGithubRelease produce un APK non firmato. Vedi scripts/rilascio.sh.
 val firma = rootProject.file("keystore.properties").takeIf { it.exists() }
     ?.let { f -> Properties().apply { f.inputStream().use { load(it) } } }
 
@@ -20,8 +20,8 @@ android {
         minSdk = 24 // minimo richiesto da CPython per Android
         targetSdk = 35
         // la versione si confronta con il tag dei rilasci su GitHub (Maintenance.newerRelease)
-        versionCode = 7
-        versionName = "0.5.0"
+        versionCode = 8
+        versionName = "0.6.0"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=none" } }
     }
@@ -41,6 +41,20 @@ android {
     buildTypes {
         release {
             if (firma != null) signingConfig = signingConfigs.getByName("rilascio")
+        }
+    }
+
+    // Due distribuzioni (docs/roadmap.md, "Modello"): "github" per chi compila da sé, "play" per il
+    // Play Store (aggiornamenti solo da Play, niente codice scaricato). Stesso codice, BuildConfig.PLAY.
+    flavorDimensions += "distribuzione"
+    productFlavors {
+        create("github") {
+            dimension = "distribuzione"
+            buildConfigField("boolean", "PLAY", "false")
+        }
+        create("play") {
+            dimension = "distribuzione"
+            buildConfigField("boolean", "PLAY", "true")
         }
     }
 

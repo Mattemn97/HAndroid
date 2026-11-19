@@ -77,9 +77,15 @@ class MainActivity : Activity() {
             addView(title("Manutenzione"))
             addView(battery)
             addView(button("Copia l'ultimo backup in Download") { exportBackup() })
+            addView(button("Backup automatici in una cartella…") { cartellaBackup() })
+            addView(button("Ripristina un backup da file…") {
+                startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), RIPRISTINA)
+            })
+            addView(button("Avviso se il server si ferma…") { avviso() })
             addView(button("Spazio occupato") { spazio() })
             addView(button("Svuota la cache") { background { "Liberati ${Strumenti.formatta(Strumenti.svuotaCache(this@MainActivity))}" } })
-            addView(button("Cerca aggiornamenti") { checkUpdates() })
+            // versione Play: aggiorna Play; versione GitHub: avvisa che c'è un codice più nuovo da compilare
+            if (!BuildConfig.PLAY) addView(button("Cerca aggiornamenti") { checkUpdates() })
             addView(title("Avanzate"))
             addView(lan)
             addView(button("Azzera la configurazione di HA…") { azzera() })
@@ -123,6 +129,8 @@ class MainActivity : Activity() {
         return "Dal telefono personale apri:\nhttp://${ip ?: "<ip del telefono>"}:8123\n\n" +
             "Da fuori casa: ${remoto?.let { AccessoRemoto.url(it) + " (Tailscale)" } ?: "Tailscale spento"}\n" +
             "Cloudflare Tunnel: ${Tunnel.stato(this)}\n" +
+            "Backup in cartella: ${BackupEsterno.stato(this)}\n" +
+            "Avviso se il server si ferma: ${if (Controllo.url(this).isEmpty()) "spento" else "attivo"}\n" +
             "Modalità di ripristino: ${if (Supervisor.recoveryMode(this)) "sì (solo integrazioni essenziali)" else "no"}\n" +
             "Avvio automatico: ${if (Supervisor.autostart(this)) "sì" else "no (HA fermato a mano)"}\n" +
             "Ottimizzazione batteria: ${if (Supervisor.batteryExempt(this)) "esclusa" else "attiva: Android può chiudere HA"}\n" +
@@ -174,6 +182,58 @@ class MainActivity : Activity() {
             .setNeutralButton("Apri Cloudflare") { _, _ -> open("https://one.dash.cloudflare.com/") }
             .setNegativeButton("Annulla", null)
             .show()
+    }
+
+    private fun cartellaBackup() {
+        AlertDialog.Builder(this)
+            .setTitle("Backup automatici in una cartella")
+            .setMessage("Ogni ora HAndroid copia l'ultimo backup di HA nella cartella che scegli (Drive, cartella di rete, " +
+                "chiavetta USB) e tiene gli ultimi ${BackupEsterno.TIENI}. I backup automatici si attivano in HA: " +
+                "Impostazioni → Sistema → Backup.\n\nOra: ${BackupEsterno.stato(this)}")
+            .setPositiveButton("Scegli la cartella") { _, _ -> startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT_TREE), CARTELLA) }
+            .setNeutralButton("Spegni") { _, _ -> BackupEsterno.salvaCartella(this, null); toast("Copia dei backup spenta") }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    private fun avviso() {
+        val campo = EditText(this).apply { hint = "https://hc-ping.com/…"; setText(Controllo.url(this@MainActivity)) }
+        AlertDialog.Builder(this)
+            .setTitle("Avviso se il server si ferma")
+            .setMessage("Crea un controllo gratuito su healthchecks.io (periodo 5 minuti, tolleranza 10) e incolla qui il suo URL. " +
+                "Finché HA risponde, HAndroid lo chiama ogni 5 minuti; se smette, healthchecks.io ti scrive. Vuoto = spento.")
+            .setView(campo)
+            .setPositiveButton("Salva") { _, _ ->
+                val url = campo.text.toString().trim()
+                when {
+                    url.isEmpty() -> { Controllo.salva(this, null); toast("Avviso spento") }
+                    !Controllo.valido(url) -> toast("Questo non sembra un indirizzo web")
+                    else -> { Controllo.salva(this, url); thread { Controllo.ping(this) }; toast("Avviso attivo: primo segnale inviato") }
+                }
+            }
+            .setNeutralButton("Apri healthchecks.io") { _, _ -> open("https://healthchecks.io/") }
+            .setNegativeButton("Annulla", null)
+            .show()
+    }
+
+    @Deprecated("Activity senza AndroidX: l'API dei risultati qui basta")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        val uri = data?.data ?: return
+        if (resultCode != RESULT_OK) return
+        when (requestCode) {
+            CARTELLA -> {
+                contentResolver.takePersistableUriPermission(uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                BackupEsterno.salvaCartella(this, uri)
+                background { BackupEsterno.copia(this)?.let { "Cartella salvata, copiato $it" } ?: "Cartella salvata: copio al prossimo backup" }
+            }
+            RIPRISTINA -> background {
+                val nome = BackupEsterno.importa(this, uri)
+                HaService.restart(this)
+                "Backup $nome pronto: dopo il riavvio vai in HA → Impostazioni → Sistema → Backup e ripristinalo"
+            }
+        }
     }
 
     private fun mostraLog() = thread {
@@ -251,7 +311,7 @@ class MainActivity : Activity() {
         if (release == null) "Nessun aggiornamento: questa è l'ultima versione"
         else {
             runOnUiThread { open(release.second) }
-            "Versione ${release.first} disponibile: scaricala e installala"
+            "Versione ${release.first} disponibile: aggiorna il codice e ricompila (guida-sviluppo.md)"
         }
     }
 
@@ -279,6 +339,9 @@ class MainActivity : Activity() {
     }
 
     companion object {
+        private const val CARTELLA = 1
+        private const val RIPRISTINA = 2
+
         /** Permessi chiesti all'utente (o concessi da soli se l'app è device owner). */
         fun runtimePermissions(): Array<String> = buildList {
             if (Build.VERSION.SDK_INT >= 33) add(Manifest.permission.POST_NOTIFICATIONS)

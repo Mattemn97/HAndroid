@@ -282,7 +282,7 @@ Tutto parte con HA, nel processo `:ha`:
 | Lampade e ventilatori a annunci BLE (FanLamp Pro, LampSmart) | trasmettitore `ble_adv_proxy` dello stesso dispositivo, per l'integrazione personalizzata ble_adv (adattatore `esp/handroid`); serve il permesso "Dispositivi nelle vicinanze" | [0008](specs/0008-trasmettitore-ble-adv.md) |
 | Chiavette Zigbee e Z-Wave via USB-OTG | socket `socket://127.0.0.1:6638` (Zigbee) o `6639` (Z-Wave) da scrivere in ZHA o Z-Wave JS; stato in `ha-config/handroid_usb_stato.json` | [0003](specs/0003-ponte-usb-seriale.md) |
 
-`configuration.yaml` iniziale (`app/src/main/assets`) è `default_config` senza cloud (grpcio), dhcp (socket raw), stream e go2rtc (FFmpeg): con `default_config` intero HA non caricherebbe nemmeno il resto, perché basta una dipendenza fallita. `HaService` lo riscrive solo se manca o se è ancora quello della M0.
+`configuration.yaml` iniziale (`app/src/main/assets`) è `default_config` senza cloud, dhcp (socket raw) e go2rtc (eseguibile non ancora nell'APK); dalla 0.7.0 c'è `stream` e le righe `automation/script/scene: !include` (i tre file li crea `HaService`): con `default_config` intero HA non caricherebbe nemmeno il resto, perché basta una dipendenza fallita. `HaService` lo riscrive solo se manca o se è ancora quello della M0.
 
 Niente sezione `homeassistant:` nel file: con quella HA blocca nell'interfaccia nome, posizione e URL (Impostazioni → Sistema → Rete). `HaService` la toglie dai file scritti dalla 0.3.0.
 
@@ -372,7 +372,7 @@ Decisioni nella [spec 0007](specs/0007-rilascio.md). Una volta per PC: la chiave
 ```bash
 bash scripts/prepara-python-android.sh            # in WSL
 # alza versionName/versionCode in app/build.gradle.kts, voce nel registro, commit
-bash scripts/rilascio.sh                          # APK firmato in build/rilascio/, con SHA-256 e note
+bash scripts/rilascio.sh                          # APK firmato e debuggable (build "usb") in build/rilascio/, con SHA-256 e note
 PUBBLICA=1 bash scripts/rilascio.sh               # tag v<versione> e rilascio su GitHub, senza APK
 ```
 
@@ -398,6 +398,7 @@ Gradle su Windows, se manca qualcosa:
 | grpcio: la sua BoringSSL va in conflitto con gli header OpenSSL di CPython | grpcio non si compila | `GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1` |
 | grpcio: `setup.py` sceglie la config di c-ares solo se `"linux" in sys.platform` | `ares_config.h` non trovato | il `case` di `compila-wheel-android.sh` tratta `android` come `linux` |
 | cloudflared ufficiale cerca i DNS in `/etc/resolv.conf` | il tunnel non si collega | compilato per `GOOS=android` con cgo in `prepara-wsl.sh` |
+| Telecamera Tuya: istantanea 500, `FFmpeg isn't running!` | il video arriva in `rtsps://` e FFmpeg senza TLS risponde "Protocol not found" | FFmpeg con mbedTLS (`--enable-mbedtls --enable-version3`, `prepara-wsl.sh`); prova: `ffmpeg -protocols` deve elencare `tls` |
 | av vuole FFmpeg 8 condivisa | telecamere e stream non partono | FFmpeg da `prepara-wsl.sh`; le `.so` e `ffmpeg` (come `libffmpeg.so`) vanno in jniLibs, `handroid_boot.py` mette `ffmpeg` nel PATH |
 | pillow, psutil | non si compilano | rinviati, vedi `scripts/android-rinviati.txt` |
 | `Os.setenv` da Kotlin non arriva né al codice C né a `os.environ` | Python non trova site-packages; HOME, TMPDIR e DNS mancanti | percorsi come argomento JNI, il resto via file in `files/` |

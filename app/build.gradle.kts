@@ -20,8 +20,8 @@ android {
         minSdk = 24 // minimo richiesto da CPython per Android
         targetSdk = 35
         // la versione si confronta con il tag dei rilasci su GitHub (Maintenance.newerRelease)
-        versionCode = 8
-        versionName = "0.6.0"
+        versionCode = 9
+        versionName = "0.7.0"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DANDROID_STL=none" } }
     }
@@ -41,6 +41,14 @@ android {
     buildTypes {
         release {
             if (firma != null) signingConfig = signingConfigs.getByName("rilascio")
+        }
+        // il rilascio per il proprio telefono: come release, ma "debuggable" così dal PC run-as legge e
+        // scrive i file di HA (ripristini, integrazioni, automazioni). Stessa firma: si aggiorna sopra la release.
+        // Su Play va solo "release".
+        create("usb") {
+            initWith(getByName("release"))
+            isDebuggable = true
+            matchingFallbacks += "release"
         }
     }
 

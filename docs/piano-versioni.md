@@ -21,7 +21,9 @@ Gate: 7 giorni sul 12T senza interventi, più un ripristino completo da backup s
 | 5 | APK più leggero | `prepara-python-android.sh`: `.pyc` al posto dei `.py` (compileall con `-b`, poi via i sorgenti), tranne `handroid_boot.py` e `custom_components` (servono leggibili). Va provato che HA carichi tutte le integrazioni di base e che pip installi sopra | `scripts/prepara-python-android.sh`, `AGENTS.md` (regola sui `.pyc`) |
 | 6 | Gate dei 7 giorni | registro giornaliero: uptime, crash da `crash.txt`, batteria da `dumpsys batterystats` | `docs/registro.md` |
 
-## 0.7.0 · Il telefono che fa di più, e la build automatica
+## 0.7.0 · Il telefono che fa di più
+
+Fatto nella 0.7.0: telecamere cloud (FFmpeg con TLS, `stream`), build `usb`, avviso batteria. La build automatica (riga 1) passa ai lavori del contorno, dopo l'app: serve al sito e al servizio a pagamento, non all'app. Con il repository pubblico GitHub Actions è gratis.
 
 Gate: "Ok Nabu, accendi la luce" funziona a 3 metri dal telefono; una release di HA arriva compilata senza toccare il PC.
 

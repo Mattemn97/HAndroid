@@ -2,6 +2,15 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-21 · 0.7.1: interfaccia nuova
+
+**Risultato:** schermata dell'app rifatta; installata sul 12T sopra la 0.7.0 senza disinstallare (stessa firma, build `usb`).
+
+**Fatto**
+- `Ui.kt`: schede arrotondate, scheda di stato in cima (pallino verde/giallo/grigio, Apri, Riavvia, Avvia/Ferma), avviso batteria come scheda gialla che compare solo se serve, righe toccabili con lo stato sotto il titolo. Solo viste di Android: niente librerie in più.
+- Tema chiaro o scuro secondo il telefono (`res/values-night`), icona dell'app (casa con telefono, adattiva da Android 8).
+- Le informazioni che prima erano un blocco di testo in fondo stanno ora sotto la riga a cui si riferiscono.
+
 ## 2026-11-21 · 0.7.0: telecamere cloud, build "usb", avviso batteria
 
 **Risultato:** 0.7.0 installata sul 12T sopra un backup completo, configurazione rimessa com'era. Prima parte della 0.7: satellite vocale, fotocamera, altoparlante e build automatica restano da fare (docs/piano-versioni.md).

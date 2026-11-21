@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- icona per Android 7 (senza icone adattive): cerchio azzurro con la casa -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape android:shape="oval"><solid android:color="#03A9F4" /></shape></item>
+    <item android:drawable="@drawable/ic_casa" />
+</layer-list>

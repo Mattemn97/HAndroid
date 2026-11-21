@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- chiaro o scuro secondo il telefono (values-night); i colori della schermata stanno in Ui.kt -->
+    <style name="Tema" parent="@android:style/Theme.DeviceDefault.Light.NoActionBar">
+        <item name="android:colorAccent">#03A9F4</item>
+    </style>
+</resources>

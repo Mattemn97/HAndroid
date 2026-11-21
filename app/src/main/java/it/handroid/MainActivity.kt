@@ -12,9 +12,8 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.widget.Button
+import android.view.View
 import android.widget.EditText
-import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.Switch
 import android.widget.TextView
@@ -26,9 +25,15 @@ import kotlin.concurrent.thread
 /** Schermata dell'app: stato del server, comandi del supervisor, backup e aggiornamenti. */
 class MainActivity : Activity() {
     private val handler = Handler(Looper.getMainLooper())
-    private lateinit var status: TextView
-    private lateinit var info: TextView
-    private lateinit var battery: Button
+    private lateinit var stato: Ui.Stato
+    private lateinit var batteria: View
+    private lateinit var indirizzo: Ui.Riga
+    private lateinit var cloudflareRiga: Ui.Riga
+    private lateinit var tailscaleRiga: Ui.Riga
+    private lateinit var backupRiga: Ui.Riga
+    private lateinit var avvisoRiga: Ui.Riga
+    private lateinit var ripristinoRiga: Ui.Riga
+    private lateinit var dettagli: TextView
     private lateinit var lan: Switch
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,57 +46,64 @@ class MainActivity : Activity() {
         // aggiornamento. Con HA già in funzione il servizio ignora la richiesta.
         if (intent.getBooleanExtra("avvia", false) || Supervisor.autostart(this)) HaService.start(this)
 
-        status = TextView(this).apply { textSize = 16f; setPadding(0, 0, 0, 32) }
-        info = TextView(this).apply { textSize = 14f; setPadding(0, 32, 0, 0) }
-        battery = button("Escludi dall'ottimizzazione batteria") { askBatteryExemption() }
         lan = Switch(this).apply {
-            text = "Dispositivo ESPHome visibile agli altri HA della rete"
             isChecked = EspHomeLan.attivo(this@MainActivity)
-            setPadding(0, 24, 0, 24)
             setOnCheckedChangeListener { _, on ->
                 EspHomeLan.imposta(this@MainActivity, on)
-                Toast.makeText(this@MainActivity, "Vale dal prossimo riavvio di HA", Toast.LENGTH_SHORT).show()
+                toast("Vale dal prossimo riavvio di HA")
             }
         }
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 96, 48, 48)
-            addView(status)
-            addView(title("Home Assistant"))
-            addView(button("Apri l'interfaccia") { open("http://127.0.0.1:8123") })
-            addView(button("Avvia") { HaService.start(this@MainActivity) })
-            addView(button("Riavvia") { HaService.restart(this@MainActivity) })
-            addView(button("Ferma") { HaService.stop(this@MainActivity) })
-            addView(title("Da fuori casa"))
-            addView(button("Cloudflare Tunnel (gratis, con un tuo dominio)") { cloudflare() })
-            addView(button("Tailscale") { accessoRemoto() })
-            addView(title("Problemi"))
-            addView(button("Mostra il log") { mostraLog() })
-            addView(button("Condividi il log") { condividiLog() })
-            addView(button("Riavvia in modalità di ripristino") {
-                Supervisor.setForcedRecovery(this@MainActivity, true); HaService.restart(this@MainActivity)
-            })
-            addView(button("Esci dalla modalità di ripristino") {
-                Supervisor.setForcedRecovery(this@MainActivity, false); HaService.restart(this@MainActivity)
-            })
-            addView(title("Manutenzione"))
-            addView(battery)
-            addView(button("Copia l'ultimo backup in Download") { exportBackup() })
-            addView(button("Backup automatici in una cartella…") { cartellaBackup() })
-            addView(button("Ripristina un backup da file…") {
-                startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), RIPRISTINA)
-            })
-            addView(button("Avviso se il server si ferma…") { avviso() })
-            addView(button("Spazio occupato") { spazio() })
-            addView(button("Svuota la cache") { background { "Liberati ${Strumenti.formatta(Strumenti.svuotaCache(this@MainActivity))}" } })
-            // versione Play: aggiorna Play; versione GitHub: avvisa che c'è un codice più nuovo da compilare
-            if (!BuildConfig.PLAY) addView(button("Cerca aggiornamenti") { checkUpdates() })
-            addView(title("Avanzate"))
-            addView(lan)
-            addView(button("Azzera la configurazione di HA…") { azzera() })
-            addView(info)
+        val ui = Ui(this)
+        stato = ui.Stato(
+            apri = { open("http://127.0.0.1:8123") },
+            riavvia = { HaService.restart(this); toast("Home Assistant riparte") },
+            accendiSpegni = {
+                if (Supervisor.autostart(this)) { HaService.stop(this); toast("Home Assistant si ferma") }
+                else { HaService.start(this); toast("Home Assistant si avvia") }
+            },
+        )
+        batteria = ui.avviso("Android può spegnere Home Assistant",
+            "Senza l'esclusione dalla batteria il server non riparte dopo un riavvio o un errore.", "Escludi") { askBatteryExemption() }
+        indirizzo = ui.riga("Dalla rete di casa", "") { condividi(indirizzoCasa(), "Indirizzo di Home Assistant") }
+        cloudflareRiga = ui.riga("Cloudflare Tunnel", "", ::cloudflare)
+        tailscaleRiga = ui.riga("Tailscale", "", ::accessoRemoto)
+        backupRiga = ui.riga("Backup automatici in una cartella", "", ::cartellaBackup)
+        avvisoRiga = ui.riga("Avviso se il server si ferma", "", ::avviso)
+        ripristinoRiga = ui.riga("Modalità di ripristino", "") {
+            val on = !Supervisor.recoveryMode(this)
+            Supervisor.setForcedRecovery(this, on); HaService.restart(this)
+            toast(if (on) "Riparto con le sole integrazioni essenziali" else "Riparto normalmente")
         }
-        setContentView(ScrollView(this).apply { addView(layout) })
+        dettagli = ui.piccolo("")
+        setContentView(ui.pagina(
+            ui.testata("HAndroid", "Home Assistant sul telefono"),
+            stato.vista,
+            batteria,
+            ui.scheda("Da fuori casa", indirizzo.vista, cloudflareRiga.vista, tailscaleRiga.vista),
+            ui.scheda("Backup",
+                backupRiga.vista,
+                ui.riga("Copia l'ultimo backup in Download", "Esce dalla memoria privata dell'app", ::exportBackup).vista,
+                ui.riga("Ripristina un backup da file", "Lo porta tra i backup di HA") {
+                    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("*/*"), RIPRISTINA)
+                }.vista),
+            ui.scheda("Se qualcosa non va",
+                ui.riga("Mostra il log", "Le ultime righe di Android e di HA", ::mostraLog).vista,
+                ui.riga("Condividi il log", "Per chiedere aiuto", ::condividiLog).vista,
+                avvisoRiga.vista,
+                ripristinoRiga.vista),
+            ui.scheda("Manutenzione", *listOfNotNull(
+                ui.riga("Spazio occupato", "Python, configurazione, backup", ::spazio).vista,
+                ui.riga("Svuota la cache", "Pacchetti scaricati e file temporanei") {
+                    background { "Liberati ${Strumenti.formatta(Strumenti.svuotaCache(this@MainActivity))}" }
+                }.vista,
+                // versione Play: aggiorna Play; versione GitHub: avvisa che c'è un codice più nuovo da compilare
+                if (BuildConfig.PLAY) null else ui.riga("Cerca aggiornamenti", "Versione ${BuildConfig.VERSION_NAME}", ::checkUpdates).vista,
+            ).toTypedArray()),
+            ui.scheda("Avanzate",
+                ui.interruttore("Telefono visibile agli altri HA", "Il dispositivo ESPHome del telefono si annuncia in rete", lan),
+                ui.pericolo("Azzera la configurazione di HA", "Cancella tutto tranne i backup", ::azzera).vista),
+            dettagli,
+        ))
     }
 
     override fun onResume() {
@@ -117,7 +129,7 @@ class MainActivity : Activity() {
         handler.removeCallbacks(refresh)
     }
 
-    /** Ogni 2 secondi: ultimo passo dell'avvio, da quanto è fermo lì, e se l'interfaccia risponde. */
+    /** Ogni 2 secondi: stato del server, ultimo passo dell'avvio e stato di ogni funzione. */
     private val refresh = object : Runnable {
         override fun run() {
             val file = HaService.statusFile(this@MainActivity)
@@ -126,31 +138,44 @@ class MainActivity : Activity() {
             thread {
                 val up = HaService.responds()
                 runOnUiThread {
-                    status.text = (if (up) "● Interfaccia raggiungibile\n" else "○ Interfaccia non ancora raggiungibile\n") +
-                        "Ultimo passo: $step\n(${age}s fa)"
+                    val acceso = Supervisor.autostart(this@MainActivity)
+                    stato.mostra(
+                        when {
+                            up -> Ui.Livello.OK
+                            acceso -> Ui.Livello.ATTESA
+                            else -> Ui.Livello.SPENTO
+                        },
+                        when {
+                            up -> "Home Assistant è acceso"
+                            acceso -> "Home Assistant si sta avviando"
+                            else -> "Home Assistant è fermo"
+                        },
+                        if (up) indirizzoCasa() else "$step · ${Ui.fa(age)}",
+                        acceso,
+                    )
                 }
             }
-            battery.isEnabled = !Supervisor.batteryExempt(this@MainActivity)
-            info.text = info()
+            batteria.visibility = if (Supervisor.batteryExempt(this@MainActivity)) View.GONE else View.VISIBLE
+            indirizzo.sotto(indirizzoCasa() + " · tocca per condividerlo")
+            cloudflareRiga.sotto(Tunnel.stato(this@MainActivity))
+            tailscaleRiga.sotto(AccessoRemoto.indirizzo()?.let { AccessoRemoto.url(it) } ?: "Spento · gratis, senza aprire porte")
+            backupRiga.sotto(BackupEsterno.stato(this@MainActivity))
+            avvisoRiga.sotto(if (Controllo.url(this@MainActivity).isEmpty()) "Spento · gratis con healthchecks.io" else "Attivo")
+            ripristinoRiga.sotto(if (Supervisor.recoveryMode(this@MainActivity)) "Attiva: solo integrazioni essenziali · tocca per uscire"
+                else "Spenta · riparte con le sole integrazioni essenziali")
+            dettagli.text = "Versione ${BuildConfig.VERSION_NAME}" +
+                (if (AdminReceiver.isDeviceOwner(this@MainActivity)) " · device owner" else "") +
+                "\nLog dal PC: adb logcat -s HAndroid python.stdout python.stderr"
             handler.postDelayed(this, 2000)
         }
     }
 
-    private fun info(): String {
-        val ip = localIp()
-        val remoto = AccessoRemoto.indirizzo()
-        return "Dal telefono personale apri:\nhttp://${ip ?: "<ip del telefono>"}:8123\n\n" +
-            "Da fuori casa: ${remoto?.let { AccessoRemoto.url(it) + " (Tailscale)" } ?: "Tailscale spento"}\n" +
-            "Cloudflare Tunnel: ${Tunnel.stato(this)}\n" +
-            "Backup in cartella: ${BackupEsterno.stato(this)}\n" +
-            "Avviso se il server si ferma: ${if (Controllo.url(this).isEmpty()) "spento" else "attivo"}\n" +
-            "Modalità di ripristino: ${if (Supervisor.recoveryMode(this)) "sì (solo integrazioni essenziali)" else "no"}\n" +
-            "Avvio automatico: ${if (Supervisor.autostart(this)) "sì" else "no (HA fermato a mano)"}\n" +
-            "Ottimizzazione batteria: ${if (Supervisor.batteryExempt(this)) "esclusa" else "attiva: Android può chiudere HA"}\n" +
-            "Device owner: ${if (AdminReceiver.isDeviceOwner(this)) "sì" else "no"}\n" +
-            "Versione: ${BuildConfig.VERSION_NAME}\n\n" +
-            "Log: adb logcat -s HAndroid python.stdout python.stderr"
-    }
+    private fun indirizzoCasa() = "http://${localIp() ?: "<ip del telefono>"}:8123"
+
+    private fun condividi(testo: String, titolo: String) = startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, testo)
+    }, titolo))
 
     /** Tailscale acceso: condivide l'indirizzo; installato: lo apre; altrimenti porta al download. */
     private fun accessoRemoto() {
@@ -303,11 +328,6 @@ class MainActivity : Activity() {
 
     private fun toast(testo: String) = Toast.makeText(this, testo, Toast.LENGTH_LONG).show()
 
-    private fun title(testo: String) = TextView(this).apply {
-        text = testo; textSize = 18f; setPadding(0, 40, 0, 8)
-        setTypeface(typeface, android.graphics.Typeface.BOLD)
-    }
-
     @SuppressLint("BatteryLife")  // un server sempre acceso è proprio il caso previsto da Android
     private fun askBatteryExemption() {
         startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
@@ -336,11 +356,6 @@ class MainActivity : Activity() {
             "Errore: ${e.message}"
         }
         runOnUiThread { Toast.makeText(this, message, Toast.LENGTH_LONG).show() }
-    }
-
-    private fun button(text: String, action: () -> Unit) = Button(this).apply {
-        this.text = text
-        setOnClickListener { action() }
     }
 
     private fun open(url: String) = startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))

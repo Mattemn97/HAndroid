@@ -167,6 +167,10 @@ class HaService : Service() {
         if (!yaml.exists() || yaml.readText().startsWith("# Configurazione minima della M0")) {
             yaml.writeText(assets.open("configuration.yaml").reader().readText())
         }
+        // automazioni, script e scene fatti dall'interfaccia: HA li crea solo se scrive lui configuration.yaml
+        for (name in listOf("automations.yaml", "scripts.yaml", "scenes.yaml")) {
+            File(config, name).takeIf { !it.exists() }?.writeText(if (name == "automations.yaml") "[]\n" else "")
+        }
         // la 0.3.0 aveva "homeassistant: name:", che blocca gli URL nell'interfaccia: si toglie
         val old = yaml.readText()
         val locked = Regex("(?m)^homeassistant:\\r?\\n  name: HAndroid\\r?\\n(\\r?\\n)?")

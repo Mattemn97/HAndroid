@@ -30,12 +30,13 @@ if [ -n "${PUBBLICA:-}" ]; then
 fi
 
 GRADLE=./gradlew; [ -f gradlew.bat ] && [ "${OS:-}" = Windows_NT ] && GRADLE=./gradlew.bat
-rm -rf app/build/intermediates/apk app/build/outputs/apk/github/release   # evita APK gonfiati dalla build incrementale
-"$GRADLE" -q testGithubDebugUnitTest assembleGithubRelease
+rm -rf app/build/intermediates/apk app/build/outputs/apk/github/usb   # evita APK gonfiati dalla build incrementale
+"$GRADLE" -q testGithubDebugUnitTest assembleGithubUsb
 
 mkdir -p build/rilascio
 APK="build/rilascio/HAndroid-$VERSIONE.apk"
-cp app/build/outputs/apk/github/release/app-github-release.apk "$APK"
+# "usb": la release firmata ma debuggable, così dal PC si può lavorare sui file di HA (AGENTS.md)
+cp app/build/outputs/apk/github/usb/app-github-usb.apk "$APK"
 SHA=$(sha256sum "$APK" | cut -d' ' -f1)
 
 # note: la voce più recente del registro

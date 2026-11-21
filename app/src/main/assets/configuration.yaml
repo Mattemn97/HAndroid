@@ -1,5 +1,5 @@
 # Configurazione iniziale di HAndroid: è default_config senza le parti che su Android non partono
-# ancora (cloud: grpcio; dhcp: socket raw, serve root; stream e go2rtc: FFmpeg e il suo eseguibile). Puoi modificarla:
+# ancora (dhcp: socket raw, serve root; go2rtc: eseguibile in arrivo). Puoi modificarla:
 # HAndroid la scrive solo se manca (o se è ancora quella della M0).
 # Niente sezione "homeassistant:": con quella HA blocca nell'interfaccia nome, posizione e URL
 # (Impostazioni > Sistema > Rete), che servono per l'accesso da remoto.
@@ -22,8 +22,14 @@ media_source:
 mobile_app:
 my:
 ssdp:
+stream:
 sun:
 usage_prediction:
 usb:
 webhook:
 zeroconf:
+
+# Automazioni, script e scene creati dall'interfaccia (HAndroid crea i file se mancano)
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml

@@ -59,6 +59,20 @@ if [ ! -f "$DEPS/lib/libsodium.a" ]; then
   rm -rf /tmp/libsodium
 fi
 
+# mbedTLS statica per FFmpeg: le telecamere cloud (Tuya) mandano il video in rtsps://, che senza TLS
+# FFmpeg non apre ("Protocol not found"). Licenza Apache 2.0: FFmpeg diventa LGPL 3 (--enable-version3), sempre senza parti GPL.
+if [ ! -f "$DEPS/lib/libmbedtls.a" ]; then
+  MBEDTLS=3.6.4
+  rm -rf /tmp/mbedtls && mkdir -p /tmp/mbedtls
+  curl -fsSL "https://github.com/Mbed-TLS/mbedtls/releases/download/mbedtls-$MBEDTLS/mbedtls-$MBEDTLS.tar.bz2" | tar xj -C /tmp/mbedtls
+  cmake -S /tmp/mbedtls/mbedtls-$MBEDTLS -B /tmp/mbedtls/b -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE="$SDK/ndk/$NDK_VERSION/build/cmake/android.toolchain.cmake" \
+    -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=24 -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+    -DENABLE_TESTING=OFF -DENABLE_PROGRAMS=OFF -DCMAKE_INSTALL_PREFIX="$DEPS" >/dev/null
+  cmake --build /tmp/mbedtls/b -j"$(nproc)" >/dev/null && cmake --install /tmp/mbedtls/b >/dev/null
+  rm -rf /tmp/mbedtls "$DEPS/lib/libavformat.so"   # FFmpeg si ricompila con TLS
+fi
+
 # FFmpeg condivisa per av (telecamere e stream di HA) e l'eseguibile ffmpeg (istantanee, integrazione
 # ffmpeg). --target-os=android dà nomi senza versione (libavcodec.so): l'APK li porta in jniLibs, dove
 # il linker di Android li trova come libpython; ffmpeg le trova con LD_LIBRARY_PATH, impostato da
@@ -73,7 +87,8 @@ if [ ! -f "$DEPS/lib/libavformat.so" ]; then
          --cc="$TC/aarch64-linux-android24-clang" \
          --ar="$TC/llvm-ar" --ranlib="$TC/llvm-ranlib" --nm="$TC/llvm-nm" --strip="$TC/llvm-strip" \
          --enable-shared --disable-static --enable-pic --disable-doc --disable-ffplay --disable-ffprobe \
-         --disable-debug >/dev/null \
+         --disable-debug --enable-mbedtls --enable-version3 \
+         --extra-cflags="-I$DEPS/include" --extra-ldflags="-L$DEPS/lib" >/dev/null \
     && make -j"$(nproc)" >/dev/null && make install >/dev/null)
   rm -rf /tmp/ffmpeg
 fi

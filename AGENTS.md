@@ -42,6 +42,7 @@ adb logcat -s HAndroid python.stdout python.stderr
 - Le integrazioni personalizzate (Xiaomi Home, ble_adv) non vanno nell'APK: si installano con `scripts/installa-integrazione.sh`. La licenza di Xiaomi Home vieta di usarla per sviluppare app.
 - La pagina del progetto sta in `sito/` (tema `mf-theme` copiato da mattemn97.github.io); `scripts/pubblica-indice.sh` la pubblica insieme ai wheel sul ramo `gh-pages` con un commit normale (niente push forzati).
 - Le versioni dei wheel seguono `package_constraints.txt` di HA (lo applica `dipendenze-android.py`): un wheel con un'altra versione per pip sul telefono non esiste.
+- Sul telefono dell'utente va la build `usb` (`assembleGithubUsb`, è quella di `rilascio.sh`): firmata come la release ma debuggable, così `run-as` legge e scrive i file di HA dal PC e le versioni si installano una sopra l'altra. Prima di ogni installazione fai un backup di `files/ha-config` sul PC (`Documenti/HAndroid-backup`). Cambiare firma richiede di disinstallare: avvisa prima.
 - Sul 12T senza SIM: installa con `adb push` in `/data/local/tmp` + `pm install -r`; `input` e `pm grant` sono bloccati.
 - Non modificare uno script bash mentre gira in background: bash lo legge a pezzi e si rompe. Lancia una copia.
 - Stato condiviso tra il processo dell'app e `:ha`: file in `files/`, non SharedPreferences.

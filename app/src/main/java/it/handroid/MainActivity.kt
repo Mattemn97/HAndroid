@@ -97,7 +97,20 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         handler.post(refresh)
+        // senza esclusione Android vieta di riavviare il servizio da dietro le quinte: un riavvio chiesto
+        // da HA (o dopo un crash) lascerebbe il server spento. Si chiede una volta per apertura.
+        if (!avvisoBatteria && !Supervisor.batteryExempt(this)) {
+            avvisoBatteria = true
+            AlertDialog.Builder(this)
+                .setTitle("Serve l'esclusione dalla batteria")
+                .setMessage("Senza, Android non lascia ripartire Home Assistant dopo un riavvio o un errore: il server resterebbe spento.")
+                .setPositiveButton("Escludi") { _, _ -> askBatteryExemption() }
+                .setNegativeButton("Più tardi", null)
+                .show()
+        }
     }
+
+    private var avvisoBatteria = false
 
     override fun onPause() {
         super.onPause()

@@ -2,6 +2,31 @@
 
 Cosa è stato fatto, cosa si è scoperto e cosa resta aperto. Le voci più recenti stanno in alto. Ogni sessione di lavoro aggiunge una voce.
 
+## 2026-11-21 · 0.7.0: telecamere cloud, build "usb", avviso batteria
+
+**Risultato:** 0.7.0 installata sul 12T sopra un backup completo, configurazione rimessa com'era. Prima parte della 0.7: satellite vocale, fotocamera, altoparlante e build automatica restano da fare (docs/piano-versioni.md).
+
+**Fatto**
+- Telecamera Tuya del balcone: l'istantanea dava 500 perché FFmpeg non aveva TLS e il video Tuya è `rtsps://`. FFmpeg ricompilato con mbedTLS 3.6.4 statica (diventa LGPL 3, sempre senza GPL); sul 12T `ffmpeg -protocols` elenca `tls` e `https` e un fotogramma vero arriva dalla telecamera. `stream:` nella configurazione iniziale (av si installa dai wheel inclusi).
+- Build `usb`: come release, stessa firma, ma debuggable. `rilascio.sh` la usa per l'APK del proprio telefono; su Play va `release`.
+- Avviso all'apertura se manca l'esclusione dalla batteria: senza, Android blocca il riavvio del servizio (`ForegroundServiceStartNotAllowedException` dopo il codice 100 di HA) e il server resta spento.
+- Plancia Termostato con fasce orarie (aiutante `schedule`, comfort/ridotta, automazioni) e mappa Windy incorporata. I dati di Windy non entrano in HA: la loro API è a pagamento e separata dall'abbonamento.
+
+## 2026-11-21 · Ripristino del 12T: preparazione
+
+**Risultato:** la 0.6.0 di rilascio è installata sul 12T, ma non permette `run-as`; il ripristino della configurazione aspetta la conferma dell'utente.
+
+**Fatto**
+- Trovato in Download il backup completo `HAndroid-backup-ha-config-2026-11-15.tar.gz`: dashboard Animali e Corrente, `packages/animali.yaml` ed `energia.yaml`, Xiaomi Home (mangiatoia, fontanella), proxy ESPHome.
+- Regola nuova in AGENTS.md: sul telefono dell'utente va sempre la build di debug.
+
+- Configurazione iniziale: mancava `automation: !include automations.yaml` (e script, scene), quindi le automazioni create dall'interfaccia non partivano. Aggiunte in `assets/configuration.yaml`; `HaService` crea i tre file se mancano. Sul 12T le righe sono state aggiunte a mano.
+- Termostato Plikc Neve Pro W spostato da Plikc Smart a Tuya Smart (reset: tasto casa 5 s fino a COFI, poi SET fino al WiFi lampeggiante): in HA arriva come `climate.termostato` con preset auto/holiday/manual.
+
+**Aperto**
+- Termostato Plikc Neve Pro: è un dispositivo Tuya; strada consigliata l'app Smart Life + integrazione Tuya di HA (wheel già nell'indice), in alternativa tuya-local.
+- Lampadina LEDVANCE Smart+: Tuya chiuso; quelle certificate vanno via Matter, che su HAndroid arriva con la 0.8.
+
 ## 2026-11-19 · 0.6.0: backup fuori dal telefono, avviso, app più leggera, GitHub senza APK
 
 **Risultato:** versione 0.6.0, rilasciata come solo codice: da qui su GitHub non c'è più l'APK pronto (piano in [roadmap.md](roadmap.md), "Modello"). Non ancora provata sul 12T.
